@@ -28,7 +28,7 @@ int validatePlaytime(const int max_playtime) {
     return 0;
 }
 
-int start_game(const int player_id, const int max_playtime, const char mode) {
+int startGame(const int player_id, const int max_playtime, const char mode) {
     currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
     std::ifstream file(currentGameFilename);
     
@@ -72,13 +72,21 @@ int start_game(const int player_id, const int max_playtime, const char mode) {
     }
 }
 
+int quitGame(const int player_id) {
+    if (!currentGameFilename.empty()) {
+        currentGameFilename.clear();
+        return 0;
+    }
+    return 1;
+}
+
 
 int main(int argc, char *argv[]) {
     int player_id = std::stoi(argv[1]);
     int max_playtime = std::stoi(argv[2]);
     char mode = argv[3][0];
 
-    start_game(player_id, max_playtime, mode);
+    startGame(player_id, max_playtime, mode);
 
     return 0;
 }
