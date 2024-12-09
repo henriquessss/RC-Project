@@ -5,8 +5,9 @@
 #include <vector>
 #include <fstream>
 #include <ctime>
+#include <string>
 
-
+std::string currentGameFilename;
 
 std::vector<std::string> generateKey() {
     std::vector<std::string> validColors = {"R", "G", "B", "Y", "O", "P"};
@@ -28,12 +29,12 @@ int validatePlaytime(const int max_playtime) {
 }
 
 int start_game(const int player_id, const int max_playtime, const char mode) {
-    std::string filename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
-    std::ifstream file(filename);
+    currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
+    std::ifstream file(currentGameFilename);
     
     if (!file) {
 
-        std::ofstream newFile(filename);
+        std::ofstream newFile(currentGameFilename);
         std::vector<std::string> key = generateKey();
 
         if (validatePlaytime(max_playtime)) {
