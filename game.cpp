@@ -11,7 +11,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace GameNamespace {
+namespace Game {
     std::string currentGameFilename;
 
     std::vector<std::string> generateKey() {
@@ -247,5 +247,32 @@ namespace GameNamespace {
         }
 
         return game_status;
+    }
+
+    std::vector<std::string> showTrials(int player_id) {
+        std::vector<std::string> trials;
+        std::string gameFile = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
+        std::ifstream file(gameFile);
+
+        if (!file.is_open()) {
+            std::cerr << "ERROR: Unable to open game file." << std::endl;
+            return trials;
+        }
+
+        std::string line;
+        int lineCount = 0;
+
+        // Skip the first 7 lines (header information)
+        while (std::getline(file, line) && lineCount < 7) {
+            lineCount++;
+        }
+
+        // Read the trials
+        while (std::getline(file, line)) {
+            trials.push_back(line);
+        }
+
+        file.close();
+        return trials;
     }
 }

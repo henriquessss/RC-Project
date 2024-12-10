@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace GameNamespace {
+namespace Game {
 
     /**
      * @brief Generates a random key for the game.
@@ -60,11 +60,17 @@ namespace GameNamespace {
     /**
      * @brief Processes a play attempt.
      * 
-     * @param plid The ID of the player.
      * @param guess The guess made by the player.
      * @return std::string The status of the game after the attempt.
      */
-    std::string playAttempt(int plid, const std::vector<std::string>& guess);
+    std::string playAttempt(const std::vector<std::string>& guess);
+
+    /**
+     * @brief Returns a vector of strings with every try in the game file.
+     * 
+     * @return std::vector<std::string> A vector containing all the tries.
+     */
+    std::vector<std::string> showTrials();
 }
 
 #endif // GAME_H
