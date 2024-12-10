@@ -114,6 +114,8 @@ int debugGame(const int player_id, const int max_playtime, const std::vector<std
 
 
 int main(int argc, char *argv[]) {
+
+    //main for debugging
     int player_id = std::stoi(argv[1]);
     int max_playtime = std::stoi(argv[2]);
     char mode = argv[3][0];
