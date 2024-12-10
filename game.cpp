@@ -25,7 +25,7 @@ std::vector<std::string> generateKey() {
 
 
 // INPUTS ARE ASSUMED TO BE CORRECT AND VALIDATED CLIENT SIDE
-int start_game(const int player_id, const int max_playtime) {
+int startGame(const int player_id, const int max_playtime) {
     currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
     std::ifstream file(currentGameFilename);
     
@@ -65,7 +65,7 @@ int start_game(const int player_id, const int max_playtime) {
     }
 }
 
-int quit_Game() {
+int quitGame() {
     if (!currentGameFilename.empty()) {
         currentGameFilename.clear();
         return 0;
@@ -73,7 +73,7 @@ int quit_Game() {
     return 1;
 }
 
-int debug_Game(const int player_id, const int max_playtime, const std::vector<std::string> key) {
+int debugGame(const int player_id, const int max_playtime, const std::vector<std::string> key) {
     
     currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
     std::ifstream file(currentGameFilename);
@@ -237,7 +237,7 @@ std::string checkGameStatus(int plid, const std::vector<std::string>& guess, int
 
 // Processa uma tentativa do jogador
 // Função para processar uma tentativa do jogador
-std::string play_trial(int plid, const std::vector<std::string>& guess) {
+std::string playTrial(int plid, const std::vector<std::string>& guess) {
     int nB = 0, nW = 0;
 
     std::string status = checkGameStatus(plid, guess, nB, nW);
@@ -274,7 +274,7 @@ int main() {
             std::string cmd;
             iss >> cmd >> player_id >> max_playtime;
 
-            start_game(player_id, max_playtime);
+            startGame(player_id, max_playtime);
             std::cout << "Jogo iniciado, tens "<< max_playtime << " segundos.\n";
             plid = player_id;
 
@@ -285,7 +285,7 @@ int main() {
             std::string cmd;
             iss >> cmd >> guess[0] >> guess[1] >> guess[2] >> guess[3];
 
-            std::string status = play_trial(plid, guess);
+            std::string status = playTrial(plid, guess);
 
             if (status == "WIN" || status == "FAIL" || status == "TIMEOUT") {
                 break;
