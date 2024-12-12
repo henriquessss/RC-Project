@@ -63,7 +63,7 @@ namespace Game {
      * @param guess The guess made by the player.
      * @return std::string The status of the game after the attempt.
      */
-    std::string playAttempt(const std::vector<std::string>& guess);
+    std::string playAttempt(int plid, const std::vector<std::string>& guess);
 
     /**
      * @brief Returns a vector of strings with every try in the game file.

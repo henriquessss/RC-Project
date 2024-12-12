@@ -10,6 +10,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <cstdio>
+#include <unistd.h>
 
 namespace Game {
     std::string currentGameFilename;
@@ -143,13 +145,13 @@ namespace Game {
         return {nB, nW};
     }
 
-    // Function to create directory if it doesn't exist
+    /* Function to create directory if it doesn't exist
     void createDirectory(const std::string& path) {
         struct stat info;
         if (stat(path.c_str(), &info) != 0) {
             mkdir(path.c_str());
         }
-    }
+    }*/
 
     // Função para verificar o estado do jogo
     std::string playAttempt(int plid, const std::vector<std::string>& guess) {
@@ -168,9 +170,10 @@ namespace Game {
         int lineCount = 0;
 
         while (std::getline(file, line) && lineCount < 7) {
-            fileContent += line + "\n";
+            fileContent += line + " ";
             lineCount++;
         }
+        file.close();
 
         std::istringstream iss(fileContent);
 
@@ -178,15 +181,6 @@ namespace Game {
         std::string mode, startDate, startHour;
 
         iss >> player_id >> mode >> secretKey >> maxTimeStr >> startDate >> startHour >> startTimeStr;
-
-        // Verificar tentativas já feitas
-        int trials = 0;
-        std::vector<std::string> attempts;
-        while (std::getline(file, line)) {
-            attempts.push_back(line);
-            trials++;
-        }
-        file.close();
 
         // Verificar tempo restante
         int maxTime, startTime;
@@ -216,13 +210,30 @@ namespace Game {
         outFile << " " << nB << " " << nW << " " << elapsedTime << "\n";
         outFile.close();
 
-        // Verificar vitória ou número máximo de tentativas
-        std::string game_status = "ONGOING";
-        if (nB == 4) {
-            game_status = "WIN";
-        } else if (trials >= 8) {
-            game_status = "FAIL";
+        // Verificar tentativas já feitas
+        file.open(gameFile);
+
+        int currentLine = 0;
+
+        while (currentLine < 7 && std::getline(file, line)) {
+            currentLine++;
         }
+
+        int trials = 0;
+        std::vector<std::string> attempts;
+        while (std::getline(file, line)) {
+            attempts.push_back(line);
+            trials++;
+        }
+        file.close();
+
+            // Verificar vitória ou número máximo de tentativas
+            std::string game_status = "ONGOING";
+            if (nB == 4) {
+                game_status = "WIN";
+            } else if (trials >= 8) {
+                game_status = "FAIL";
+            }
 
         // Se o jogo for encerrado
         if (game_status != "ONGOING"){
@@ -235,16 +246,33 @@ namespace Game {
             char endTimeStr[9];
             std::strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
 
-            std::string newFileName = "GAMES/" + player_id + "/" + endDate + "_" + endTimeStr + "_" + game_status[0] + ".txt";
+        std::stringstream ss;
+        ss << "GAMES/" << player_id << "/" << endDate << "_" << endTimeStr << "_" << game_status[0] << ".txt";
+        std::string newFileName = ss.str();
 
-            // Create player directory if it doesn't exist
-            createDirectory("GAMES/" + player_id);
+        // Criar diretoria do jogador se não existir
+        
+        std::system(("mkdir -p GAMES/" + player_id).c_str());
 
-            // Move the file to the new location
-            std::ofstream outFinal(newFileName, std::ios::app);
-            outFinal << endDate << " " << endTimeStr << " " << elapsedTime << "\n";
-            outFinal.close();
+        std::rename(gameFile.c_str(), newFileName.c_str());
+
+        std::ofstream outFinal(newFileName, std::ios::app);
+        outFinal << endDate << " " << endTimeStr << " " << elapsedTime << "\n";
+        outFinal.close();
+
+        
+        // Se o jogo for terminado com sucesso
+        if (game_status == "WIN"){
+            std::string score = "0";
+            std::string scoreFileName = "SCORES/"+ score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
+            std::ofstream scoreFile(scoreFileName);
+
+            scoreFile << score << " " << player_id << " " << secretKey << " " << trials << " ";
+            scoreFile << (mode == "P" ? "PLAY" : "DEBUG") << std::endl;
+
+            scoreFile.close();
         }
+    }
 
         return game_status;
     }
