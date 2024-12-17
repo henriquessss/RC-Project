@@ -70,12 +70,30 @@ namespace Game {
         }
     }
 
-    int quitGame() {
+    std::vector<std::string> quitGame(int player_id) {
+        std::vector<std::string> key;
         if (!currentGameFilename.empty()) {
+            std::ifstream file(currentGameFilename);
+
+            if (file){
+                std::string line;
+
+                std::getline(file,line);
+                int plid = std::stoi(line);
+
+                if (plid == player_id){
+                    std::getline(file,line);
+                    std::getline(file,line);
+
+                    for (char c:line){
+                        key.push_back(std::string(1,c));
+                    }
+                }
+                file.close();
+            }
             currentGameFilename.clear();
-            return 0;
         }
-        return 1;
+        return key;
     }
 
     int debugGame(const int player_id, const int max_playtime, const std::vector<std::string> key) {

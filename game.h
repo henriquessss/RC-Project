@@ -68,7 +68,7 @@ namespace Game {
      * 
      * @return int 0 if the game is successfully quit, 1 if there is no game to quit.
      */
-    int quitGame();
+    std::vector<std::string> quitGame(int player_id);
 
     /**
      * @brief Starts a debug game with a predefined key.

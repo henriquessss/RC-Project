@@ -24,7 +24,7 @@ std::string processStart(int player_id, int max_playtime){
     }
     std::cout std::endl;
 
-    return "RSG OK\n"
+    return "RSG OK\n";
 }
 
 std::string processTry( int player_id, std::string guess, int num_tries){
@@ -37,38 +37,67 @@ std::string processTry( int player_id, std::string guess, int num_tries){
     if (1){
         response = "RTR DUP";
     } else if (atoi(hints[2]) != num_tries){ /*TO-DO: adicionar este caso INV, if the trial number 
-    nT is the expected value minus 1, but the secretkey guess is different from the 
-    one of the previous message?*/
+        nT is the expected value minus 1, but the secretkey guess is different from the 
+        one of the previous message?*/
         response = "RTR INV";
     } else if(/*TO-DO: !plid_has_activeGame*/){
-        response = "RTR NOK " + num_tries + " " + hints[0] + " " + hints[1] + " ";
-        for (int i = 0; i < 4; i++) {
-            response += guess[i] + " ";
-        }
-        response += "\n";
+        response = "RTR NOK\n";
     } else if(atoi(hints[2]) = 8 && hints[3] == "FAIL"){
-        response = "RTR ENT" + num_tries + " " + hints[0] + " " + hints[1] + " ";
+        response = "RTR ENT ";
         for (int i = 0; i < 4; i++){
             response += hints[4][i] + " ";
         }
         response += "\n"
     } else if(hints[3] == "TIMEOUT"){
-        response = "RTR ETM " + num_tries + " " + hints[0] + " " + hints[1] + " ";
+        response = "RTR ETM ";
         for (int i = 0; i < 4; i++){
             response += hints[4][i] + " ";
         }
         response += "\n";
     } else {
-        response = "RTR OK " + num_tries + " " + hints[0] + " " + hints[1] + " ";
-        for (int i = 0; i < 4; i++) {
-            response += guess[i] + " ";
-        }
-        response += "\n";
+        response = "RTR OK " + num_tries + " " + hints[0] + " " + hints[1] + " \n";
     }
 
-    
-    return response
+    std::cout << "PLID=" << player_id << ": try ";
+    for ( int i = 0; i < 4; i++){
+        std::cout << guess[i] << " ";
+    }
+    std::cout << "- nB = " << hints[0] << ", nW = " << hints[1]
+    if (hints[3] == "ONGOING"){
+        std::cout << "; not guessed" << std::endl;
+    } else if (hints[3] == "WIN"){
+        std::cout << ": WIN (game ended)";
+    }
+
+    return response;
 }
+
+std::string processQuit(int player_id){
+    std::string response;
+    if (player_has_activeGame){
+        std::vector<std::string> key = Game::quitGame(player_id);
+        response = "RQT OK ";
+        for (int i = 0; i < 4; i++) {
+            response += key[i] + " ";
+        }
+        response += "\n";
+    } else {
+        response = "RQT NOK\n";
+    }
+    return response;
+}
+
+std::string processDebug(int player_id, int max_playtime, std::vector<std::string> key){
+    std::string response;
+    if (!player_has_activeGame){
+        Game::debugGame(player_id,max_playtime, key);
+        response = "RDB OK\n";
+    } else {
+        response = "RDB NOK\n";
+    }
+    return response;
+}
+
 std::string processShowTrials(const std::string& message);
 std::string processScoreboard(const std::string& message);
 
@@ -168,9 +197,33 @@ std::string cmdHandler(std::string command(buffer)){
             response = processTry(player_id, guess, num_tries);
         }
     } else if (cmd_type == "QUT"){
-
+        int player_id;
+        iss >> player_id;
+        
+        if (player_id < 100000|| player_id >= 999999){
+            response = "RQT ERR\n";
+        } else {
+            response = processQuit(player_id);
+        }
     } else if (cmd_type == "DBG"){
-
+        int player_id, max_playtime;
+        std::vector<std::string> key;
+        iss >> player_id >> max_playtime;
+        for (int i = 0; i < 4; i++){
+            iss >> key[i];
+            if (key[i].length() != 1){
+                response = "RDB ERR\n"
+            }
+        }
+        if (player_id < 100000|| player_id >= 999999 ||
+         max_playtime <= 0 ||max_playtime > 600 ||
+         ){
+            response = "RDB ERR\n";
+         } else if (response = ""){
+            response = processDebug(player_id, max_playtime, key);
+         }
+    } else if (cmd_type == "STR"){
+        /* TO-DO: */
     } else {
         response = "ERR\n";
     }
@@ -234,13 +287,7 @@ void handleTCPRequest(int tcp_socket) {
     std::string response;
 
     // Trata os comandos STR e SSB
-    if (command == "STR") {
-        response = processStart("RST"); // Exemplo com player_id = 1
-    } else if (command == "SSB") {
-        response = processScoreboard("RSS");
-    } else {
-        response = "ERR Unknown TCP command.";
-    }
+    std::string response = cmdHandler(command(buffer));
 
     // Envia a resposta ao cliente
     if (write(client_socket, response.c_str(), response.size()) < 0) {
