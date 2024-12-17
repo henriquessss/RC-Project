@@ -227,7 +227,7 @@ namespace Game {
         // Verificar vitória ou número máximo de tentativas
         if (nB == 4) {
             game_status = "WIN";
-        } else if (trials >= 8) {
+        } else if (trials >= 8 && game_status != "WIN") {
             game_status = "FAIL";
         }
 
@@ -272,7 +272,7 @@ namespace Game {
             scoreFile.close();
         }
     }
-        hints = {std::to_string(nB), std::to_string(nW)};
+        hints = {std::to_string(nB), std::to_string(nW), std::to_string(trials), game_status, secretKey};
         return hints;
     }
 
