@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <cstdio>
 #include <unistd.h>
+#include <dirent.h>
+#include <algorithm>
 
 namespace Game {
     std::string currentGameFilename;
@@ -30,7 +32,7 @@ namespace Game {
 
 
     // INPUTS ARE ASSUMED TO BE CORRECT AND VALIDATED CLIENT SIDE
-    int startGame(const int player_id, const int max_playtime) {
+    std::vector<std::string> startGame(const int player_id, const int max_playtime) {
         currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
         std::ifstream file(currentGameFilename);
         
@@ -64,9 +66,7 @@ namespace Game {
 
             newFile.close();
         
-            return 0;
-        } else {
-            return 1;
+            return key;
         }
     }
 
@@ -82,7 +82,6 @@ namespace Game {
         
         currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
         std::ifstream file(currentGameFilename);
-        
         if (!file) {
 
             std::ofstream newFile(currentGameFilename);
@@ -154,16 +153,14 @@ namespace Game {
     }*/
 
     // Função para verificar o estado do jogo
-    std::string playAttempt(int plid, const std::vector<std::string>& guess) {
+    std::vector<std::string> playAttempt(int plid, const std::vector<std::string>& guess) {
         int nB, nW;
+        std::vector<std::string> hints;
 
         std::string gameFile = "GAMES/GAME_" + std::to_string(plid) + ".txt";
 
         // Abrir o ficheiro do jogo para leitura
         std::ifstream file(gameFile);
-        if (!file.is_open()) {
-            return "ERROR: Unable to open game file.";
-        }
 
         // Leitura
         std::string line, fileContent;
@@ -187,12 +184,12 @@ namespace Game {
         maxTime = stoi(maxTimeStr);
         startTime = stoi(startTimeStr);
         std::time_t currentTime = std::time(nullptr);
+        std::string game_status = "ONGOING";
 
         int elapsedTime = currentTime - startTime;
         if (elapsedTime > maxTime) {
-            return "TIMEOUT";
+            game_status = "TIMEOUT";
         }
-
 
         // Validar a tentativa
         nB = nW = 0;
@@ -227,13 +224,12 @@ namespace Game {
         }
         file.close();
 
-            // Verificar vitória ou número máximo de tentativas
-            std::string game_status = "ONGOING";
-            if (nB == 4) {
-                game_status = "WIN";
-            } else if (trials >= 8) {
-                game_status = "FAIL";
-            }
+        // Verificar vitória ou número máximo de tentativas
+        if (nB == 4) {
+            game_status = "WIN";
+        } else if (trials >= 8) {
+            game_status = "FAIL";
+        }
 
         // Se o jogo for encerrado
         if (game_status != "ONGOING"){
@@ -264,6 +260,9 @@ namespace Game {
         // Se o jogo for terminado com sucesso
         if (game_status == "WIN"){
             std::string score = "0";
+
+            // Calcular score
+
             std::string scoreFileName = "SCORES/"+ score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
             std::ofstream scoreFile(scoreFileName);
 
@@ -273,8 +272,8 @@ namespace Game {
             scoreFile.close();
         }
     }
-
-        return game_status;
+        hints = {std::to_string(nB), std::to_string(nW)};
+        return hints;
     }
 
     std::vector<std::string> showTrials(int player_id) {
@@ -303,4 +302,57 @@ namespace Game {
         file.close();
         return trials;
     }
+
+    /*int FindPlayerTopScores(SCORELIST *list, int plid){
+        struct dirent **filelist;
+        int n_entries, i_file;
+        char fname[300];
+        FILE *fp;
+        char mode[8];
+
+        n_entries = scandir("SCORES/", &filelist, 0, alphasort);
+
+        if (n_entries <= 0)
+            return(0);
+        else {
+            i_file = 0;
+            while (n_entries--){
+                if(filelist[n_entries]->d_name[0]!='.' && i_file < 10){
+                    sprintf(fname, "SCORES/%s", filelist[n_entries]->d_name);
+                    fp = fopen(fname, "r");
+                    if (fp!= NULL){
+
+                        int temp_id, temp_score, temp_tries;
+                        std::string temp_key, temp_mode;
+
+                        fscanf(fp, "%d_%s_%s_%d_%s", &temp_id, &temp_score, temp_key, &temp_tries, temp_mode);
+
+                        if (temp_id == plid) {
+                            list-> score[i_file];
+                            list-> PLID[i_file].c_str();
+                            list-> col_code[i_file].c_str();
+                            list-> no_tries[i_file];
+                            if (!strcmp(mode, "PLAY"))  
+                                list->mode[i_file] = "PLAY";
+                            if (!strcmp(mode, "DEBUG")) 
+                                list->mode[i_file] = "DEBUG";
+                            ++i_file;
+                        }
+                        fclose(fp);
+                    }
+                }
+                free(filelist[n_entries]);
+            }
+            free(filelist);
+        }
+
+        list->n_scores=i_file;
+        return(i_file);
+    }
+
+    std::vector<std::string> viewScoreboard(SCORELIST *list, int player_id){
+        
+        int scores = FindPlayerTopScores(SCORELIST list, player_id);
+    }*/
+
 }
