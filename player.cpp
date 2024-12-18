@@ -1,5 +1,3 @@
-//#include <arpa/inet.h>
-//#include <netdb.h>
 #include <getopt.h>
 #include <vector>
 #include <string>
@@ -10,6 +8,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fstream>
+#include <iostream>
+#include <sstream>
+#include <cstring>
+#include <netdb.h> 
 
 #define BUFFER_SIZE 128
 
