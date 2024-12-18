@@ -5,30 +5,19 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fstream>
 
 #define BUFFER_SIZE 128
 
 // Global variables
 std::string gsip = "127.0.0.1";
 int gsport = 58078;
-
-// Função para lidar com os comandos do jogador por TCP
-void handleShowTrials(int plid) {
-    std::string message = "STR " + std::to_string(plid);
-
-    if (!sendUDPMessage(message)) {
-        std::cerr << "Failed to send show message via UDP." << std::endl;
-    }
-}
-
-void handleScoreboard() {
-    std::string message = "SSB";
-
-    if (!sendUDPMessage(message)) {
-        std::cerr << "Failed to send scoreboard message via UDP." << std::endl;
-    }
-}
-
+int udp_socket;
+int tcp_socket;
 
 // Funções Protocolos
 std::string receiveUDPMessage() {
@@ -72,14 +61,143 @@ bool sendUDPMessage(const std::string& message) {
     return true;
 }
 
+std::string receiveTCPMessage() {
+    char buffer[BUFFER_SIZE];
+    ssize_t n = recv(tcp_socket, buffer, sizeof(buffer) - 1, 0);
+    if (n <= 0) {
+        std::cerr << "Failed to receive response via TCP." << std::endl;
+        return "";
+    }
+
+    buffer[n] = '\0';
+    return std::string(buffer);
+}
+
+bool sendTCPMessage(const std::string& message) {
+    ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
+    if (n == -1) {
+        std::cerr << "Failed to send message via TCP." << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void handleShowTrials(int plid) {
+    std::string message = "STR " + std::to_string(plid) + "\n";
+
+    if (!sendTCPMessage(message)) {
+        return;
+    }
+
+    std::string response = receiveTCPMessage();
+    std::cout << "Server response: " << response << std::endl;
+
+    if (response.substr(0, 3) == "RST") {
+        std::string status = response.substr(4, 3);
+        if (status == "ACT" || status == "FIN") {
+            std::string fname;
+            int fsize;
+            std::istringstream iss(response.substr(8));
+            iss >> fname >> fsize;
+
+            std::ofstream outfile(fname, std::ios::binary);
+            char buffer[BUFFER_SIZE];
+            int bytes_received = 0;
+            while (bytes_received < fsize) {
+                ssize_t n = recv(tcp_socket, buffer, std::min(BUFFER_SIZE, fsize - bytes_received), 0);
+                if (n <= 0) {
+                    std::cerr << "Failed to receive file data via TCP." << std::endl;
+                    return;
+                }
+                outfile.write(buffer, n);
+                bytes_received += n;
+            }
+            outfile.close();
+
+            std::cout << "File received: " << fname << " (" << fsize << " bytes)" << std::endl;
+        } else if (status == "NOK") {
+            std::cout << "No ongoing or finished game found for player." << std::endl;
+        } else {
+            std::cerr << "Unknown response status: " << status << std::endl;
+        }
+    } else {
+        std::cerr << "Unexpected response: " << response << std::endl;
+        sendTCPMessage("ERR\n");
+    }
+}
+
+void handleScoreboard() {
+    std::string message = "SSB\n";
+
+    if (!sendTCPMessage(message)) {
+        return;
+    }
+
+    std::string response = receiveTCPMessage();
+    std::cout << "Server response: " << response << std::endl;
+
+    if (response.substr(0, 3) == "RSS") {
+        std::string status = response.substr(4, 5);
+        if (status == "EMPTY") {
+            std::cout << "Scoreboard is empty." << std::endl;
+        } else if (status == "OK") {
+            std::string fname;
+            int fsize;
+            std::istringstream iss(response.substr(10));
+            iss >> fname >> fsize;
+
+            std::ofstream outfile(fname, std::ios::binary);
+            char buffer[BUFFER_SIZE];
+            int bytes_received = 0;
+            while (bytes_received < fsize) {
+                ssize_t n = recv(tcp_socket, buffer, std::min(BUFFER_SIZE, fsize - bytes_received), 0);
+                if (n <= 0) {
+                    std::cerr << "Failed to receive file data via TCP." << std::endl;
+                    return;
+                }
+                outfile.write(buffer, n);
+                bytes_received += n;
+            }
+            outfile.close();
+
+            std::cout << "File received: " << fname << " (" << fsize << " bytes)" << std::endl;
+        } else {
+            std::cerr << "Unknown response status: " << status << std::endl;
+        }
+    } else {
+        std::cerr << "Unexpected response: " << response << std::endl;
+        sendTCPMessage("ERR\n");
+    }
+}
+
 // Funções para lidar com os comandos do jogador por UDP
 void handleStart(int plid, int max_playtime) {
     char time_str[4];
     snprintf(time_str, sizeof(time_str), "%03d", max_playtime);
-    std::string message = "SNG " + std::to_string(plid) + " " + time_str;
+    std::string message = "SNG " + std::to_string(plid) + " " + time_str + "\n";
 
     if (!sendUDPMessage(message)) {
         std::cerr << "Failed to send start message via UDP." << std::endl;
+    } else {
+        std::string response = receiveUDPMessage();
+        std::cout << "Server response: " << response << std::endl;
+
+        if (response.substr(0, 3) == "RSG") {
+            std::string status = response.substr(4);
+            if (status == "OK") {
+                std::cout << "Game started successfully." << std::endl;
+            } else if (status == "NOK") {
+                std::cout << "Failed to start game: ongoing game exists." << std::endl;
+            } else if (status == "ERR") {
+                std::cout << "Failed to start game: invalid request." << std::endl;
+            } else {
+                std::cout << "Unknown response status: " << status << std::endl;
+            }
+        } else {
+            std::cerr << "Unexpected response: " << response << std::endl;
+            sendUDPMessage("ERR\n");
+        }
     }
 }
 
@@ -91,18 +209,72 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
     for (const auto& color : guess) {
         message += " " + color;
     }
-    message += " " + std::to_string(trial_number);
+    message += " " + std::to_string(trial_number) + "\n";
 
     if (!sendUDPMessage(message)) {
         std::cerr << "Failed to send try message via UDP." << std::endl;
+    } else {
+        std::string response = receiveUDPMessage();
+        std::cout << "Server response: " << response << std::endl;
+
+        if (response.substr(0, 3) == "RTR") {
+            std::string status = response.substr(4, 2);
+            if (status == "OK") {
+                int nT, nB, nW;
+                sscanf(response.c_str() + 7, "%d %d %d", &nT, &nB, &nW);
+                std::cout << "Trial " << nT << ": " << nB << " correct positions, " << nW << " correct colors." << std::endl;
+                if (nB == 4) {
+                    std::cout << "Congratulations! You've guessed the secret key!" << std::endl;
+                }
+            } else if (status == "DUP") {
+                std::cout << "Duplicate trial." << std::endl;
+            } else if (status == "INV") {
+                std::cout << "Invalid trial." << std::endl;
+            } else if (status == "NOK") {
+                std::cout << "No ongoing game." << std::endl;
+            } else if (status == "ENT") {
+                std::string key = response.substr(7);
+                std::cout << "No more attempts. The secret key was: " << key << std::endl;
+            } else if (status == "ETM") {
+                std::string key = response.substr(7);
+                std::cout << "Time exceeded. The secret key was: " << key << std::endl;
+            } else if (status == "ERR") {
+                std::cout << "Error in request." << std::endl;
+            } else {
+                std::cout << "Unknown response status: " << status << std::endl;
+            }
+        } else {
+            std::cerr << "Unexpected response: " << response << std::endl;
+            sendUDPMessage("ERR\n");
+        }
     }
 }
 
 void handleQuit(int plid) {
-    std::string message = "QUT " + std::to_string(plid);
+    std::string message = "QUT " + std::to_string(plid) + "\n";
 
     if (!sendUDPMessage(message)) {
         std::cerr << "Failed to send quit message via UDP." << std::endl;
+    } else {
+        std::string response = receiveUDPMessage();
+        std::cout << "Server response: " << response << std::endl;
+
+        if (response.substr(0, 3) == "RQT") {
+            std::string status = response.substr(4, 2);
+            if (status == "OK") {
+                std::string key = response.substr(7);
+                std::cout << "Game terminated. The secret key was: " << key << std::endl;
+            } else if (status == "NOK") {
+                std::cout << "No ongoing game to terminate." << std::endl;
+            } else if (status == "ERR") {
+                std::cout << "Error in request." << std::endl;
+            } else {
+                std::cout << "Unknown response status: " << status << std::endl;
+            }
+        } else {
+            std::cerr << "Unexpected response: " << response << std::endl;
+            sendUDPMessage("ERR\n");
+        }
     }
 }
 
@@ -114,9 +286,29 @@ void handleDebug(int plid, int max_playtime, const std::vector<std::string>& key
     for (const auto& color : key) {
         message += " " + color;
     }
+    message += "\n";
 
     if (!sendUDPMessage(message)) {
         std::cerr << "Failed to send debug message via UDP." << std::endl;
+    } else {
+        std::string response = receiveUDPMessage();
+        std::cout << "Server response: " << response << std::endl;
+
+        if (response.substr(0, 3) == "RDB") {
+            std::string status = response.substr(4);
+            if (status == "OK") {
+                std::cout << "Debug game started successfully." << std::endl;
+            } else if (status == "NOK") {
+                std::cout << "Failed to start debug game: ongoing game exists." << std::endl;
+            } else if (status == "ERR") {
+                std::cout << "Failed to start debug game: invalid request." << std::endl;
+            } else {
+                std::cout << "Unknown response status: " << status << std::endl;
+            }
+        } else {
+            std::cerr << "Unexpected response: " << response << std::endl;
+            sendUDPMessage("ERR\n");
+        }
     }
 }
 
@@ -249,7 +441,7 @@ int main(int argc, char *argv[]) {
 
     // Criar sockets
     struct addrinfo *udp_res;
-    int udp_socket = create_udp_socket(&udp_res);
+    udp_socket = create_udp_socket(&udp_res);
 
     if (udp_socket == -1) {
         std::cerr << "Failed to create UDP socket." << std::endl;
@@ -257,7 +449,7 @@ int main(int argc, char *argv[]) {
     }
 
     struct addrinfo *tcp_res;
-    int tcp_socket = create_tcp_socket(&tcp_res);
+    tcp_socket = create_tcp_socket(&tcp_res);
 
     if (tcp_socket == -1) {
         std::cerr << "Failed to create TCP socket." << std::endl;
