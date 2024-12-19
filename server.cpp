@@ -89,7 +89,10 @@ std::string processDebug(int player_id, int max_playtime, const std::vector<std:
     return response;
 }
 
-std::string processShowTrials(const std::string& message);
+std::string processShowTrials(int player_id){
+    return Game::showTrials(player_id);
+}
+
 std::string processScoreboard(const std::string& message);
 
 // Funções Protocolos
@@ -217,7 +220,14 @@ std::string cmdHandler(const std::string& command){
             response = processDebug(player_id, max_playtime, key);
         }
     } else if (cmd_type == "STR"){
-        /* TO-DO: */
+        int player_id;
+        iss >> player_id;
+
+        if (player_id < 100000 || player_id >= 999999){
+            response = "RST NOK\n";
+        } else {
+            response = processShowTrials(player_id);
+        }
     } else {
         response = "ERR\n";
     }

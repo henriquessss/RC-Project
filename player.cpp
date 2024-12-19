@@ -17,7 +17,7 @@
 
 // Global variables
 std::string gsip = "127.0.0.1";
-int gsport = 58081;
+int gsport = 58089;
 int udp_socket;
 int tcp_socket;
 int currentPlayerID;
@@ -78,11 +78,13 @@ std::string receiveTCPMessage() {
 
 bool sendTCPMessage(const std::string& message) {
     ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
+
+    std::cout << "n: " << n << std::endl;
+    
     if (n == -1) {
         std::cerr << "Failed to send message via TCP." << std::endl;
         return false;
     }
-
     return true;
 }
 
@@ -90,10 +92,14 @@ void handleShowTrials(int plid) {
     std::string message = "STR " + std::to_string(plid) + "\n";
 
     if (!sendTCPMessage(message)) {
+        std::cerr << "Failed to send start message via TCP." << std::endl;
         return;
     }
 
     std::string response = receiveTCPMessage();
+
+    std::cout << "Response: " << response << std::endl; 
+
     printf("Server response: %s\n", response.c_str());
 
     if (response.substr(0, 3) == "RST") {
@@ -134,6 +140,7 @@ void handleScoreboard() {
     std::string message = "SSB\n";
 
     if (!sendTCPMessage(message)) {
+        std::cerr << "Failed to send start message via TCP." << std::endl;
         return;
     }
 
@@ -220,30 +227,43 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
         std::string response = receiveUDPMessage();
         printf("Server response: %s\n", response.c_str());
 
-        if (response.substr(0, 3) == "RTR") {
-            std::string status = response.substr(4, 2);
-            if (status == "OK") {
+        std::istringstream iss(response);
+        std::string prefix, status;
+        iss >> prefix >> status;
+
+        if (prefix == "RTR") {
+
+            if (strcmp(status.c_str(), "OK") == 0) {
                 int nT, nB, nW;
-                sscanf(response.c_str() + 7, "%d %d %d", &nT, &nB, &nW);
+                /*sscanf(response.c_str() + 7, "%d %d %d", &nT, &nB, &nW);*/
+                iss >> nT >> nB >> nW;
                 printf("Trial %d: %d correct positions, %d correct colors.\n", nT, nB, nW);
                 if (nB == 4) {
+                    trial_number = 0;
                     printf("Congratulations! You've guessed the secret key!\n");
                 }
-            } else if (status == "DUP\n") {
+            } else if (strcmp(status.c_str(), "DUP") == 0) {
+                trial_number--;
                 printf("Duplicate trial.\n");
-            } else if (status == "INV\n") {
+            } else if (strcmp(status.c_str(), "INV") == 0) {
+                trial_number--;
                 printf("Invalid trial.\n");
-            } else if (status == "NOK\n") {
+            } else if (strcmp(status.c_str(), "NOK") == 0) {
+                trial_number--;
                 printf("No ongoing game.\n");
-            } else if (status == "ENT\n") {
-                std::string key = response.substr(7);
+            } else if (strcmp(status.c_str(), "ENT") == 0) {
+                std::string key;
+                iss >> key;
                 printf("No more attempts. The secret key was: %s\n", key.c_str());
-            } else if (status == "ETM\n") {
-                std::string key = response.substr(7);
+            } else if (strcmp(status.c_str(), "ETM") == 0) {
+                std::string key;
+                iss >> key;
                 printf("Time exceeded. The secret key was: %s\n", key.c_str());
-            } else if (status == "ERR\n") {
+            } else if (strcmp(status.c_str(), "ERR") == 0) {
+                trial_number--;
                 printf("Error in request.\n");
             } else {
+                trial_number--;
                 printf("Unknown response status: %s\n", status.c_str());
             }
         } else {

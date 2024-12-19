@@ -43,14 +43,6 @@ namespace Game {
                     std::string secretKey, int trials);
 
     /**
-     * @brief Processes a play attempt.
-     * 
-     * @param guess The guess made by the player.
-     * @return std::string The status of the game after the attempt.
-     */
-    std::vector<std::string> playAttempt(int plid, const std::vector<std::string>& guess);
-
-    /**
      * @brief Processes a play attempt with number of tries.
      * 
      * @param plid The player ID.
@@ -61,11 +53,23 @@ namespace Game {
     std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess);
 
     /**
+     * @brief 
+     * 
+     */
+    int FindLastGame(std::string PLID, char* fname);
+
+    /**
+     * @brief 
+     * 
+     */
+    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime);
+
+    /**
      * @brief Returns a vector of strings with every try in the game file.
      * 
      * @return std::vector<std::string> A vector containing all the tries.
      */
-    std::vector<std::string> showTrials(int player_id);
+    std::string showTrials(int player_id);
 
     /**
      * @brief Returns a integer of the number of scores found for that player
