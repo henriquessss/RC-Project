@@ -20,6 +20,7 @@ std::string gsip = "127.0.0.1";
 int gsport = 58078;
 int udp_socket;
 int tcp_socket;
+int currentPlayerID;
 
 // Funções Protocolos
 std::string receiveUDPMessage() {
@@ -56,7 +57,7 @@ bool sendUDPMessage(const std::string& message) {
     freeaddrinfo(res);
 
     if (n == -1) {
-        std::cerr << "UDP send failed." << std::endl;
+        std::cerr << "UDP send failed: " << strerror(errno) << std::endl;
         return false;
     }
 
@@ -93,7 +94,7 @@ void handleShowTrials(int plid) {
     }
 
     std::string response = receiveTCPMessage();
-    std::cout << "Server response: " << response << std::endl;
+    printf("Server response: %s\n", response.c_str());
 
     if (response.substr(0, 3) == "RST") {
         std::string status = response.substr(4, 3);
@@ -117,9 +118,9 @@ void handleShowTrials(int plid) {
             }
             outfile.close();
 
-            std::cout << "File received: " << fname << " (" << fsize << " bytes)" << std::endl;
+            printf("File received: %s (%d bytes)\n", fname.c_str(), fsize);
         } else if (status == "NOK") {
-            std::cout << "No ongoing or finished game found for player." << std::endl;
+            printf("No ongoing or finished game found for player.\n");
         } else {
             std::cerr << "Unknown response status: " << status << std::endl;
         }
@@ -137,12 +138,12 @@ void handleScoreboard() {
     }
 
     std::string response = receiveTCPMessage();
-    std::cout << "Server response: " << response << std::endl;
+    printf("Server response: %s\n", response.c_str());
 
     if (response.substr(0, 3) == "RSS") {
         std::string status = response.substr(4, 5);
         if (status == "EMPTY") {
-            std::cout << "Scoreboard is empty." << std::endl;
+            printf("Scoreboard is empty.\n");
         } else if (status == "OK") {
             std::string fname;
             int fsize;
@@ -163,7 +164,7 @@ void handleScoreboard() {
             }
             outfile.close();
 
-            std::cout << "File received: " << fname << " (" << fsize << " bytes)" << std::endl;
+            printf("File received: %s (%d bytes)\n", fname.c_str(), fsize);
         } else {
             std::cerr << "Unknown response status: " << status << std::endl;
         }
@@ -183,18 +184,18 @@ void handleStart(int plid, int max_playtime) {
         std::cerr << "Failed to send start message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        std::cout << "Server response: " << response << std::endl;
+        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RSG") {
             std::string status = response.substr(4);
             if (status == "OK") {
-                std::cout << "Game started successfully." << std::endl;
+                printf("Game started successfully.\n");
             } else if (status == "NOK") {
-                std::cout << "Failed to start game: ongoing game exists." << std::endl;
+                printf("Failed to start game: ongoing game exists.\n");
             } else if (status == "ERR") {
-                std::cout << "Failed to start game: invalid request." << std::endl;
+                printf("Failed to start game: invalid request.\n");
             } else {
-                std::cout << "Unknown response status: " << status << std::endl;
+                printf("Unknown response status: %s\n", status.c_str());
             }
         } else {
             std::cerr << "Unexpected response: " << response << std::endl;
@@ -217,33 +218,33 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
         std::cerr << "Failed to send try message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        std::cout << "Server response: " << response << std::endl;
+        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RTR") {
             std::string status = response.substr(4, 2);
             if (status == "OK") {
                 int nT, nB, nW;
                 sscanf(response.c_str() + 7, "%d %d %d", &nT, &nB, &nW);
-                std::cout << "Trial " << nT << ": " << nB << " correct positions, " << nW << " correct colors." << std::endl;
+                printf("Trial %d: %d correct positions, %d correct colors.\n", nT, nB, nW);
                 if (nB == 4) {
-                    std::cout << "Congratulations! You've guessed the secret key!" << std::endl;
+                    printf("Congratulations! You've guessed the secret key!\n");
                 }
             } else if (status == "DUP") {
-                std::cout << "Duplicate trial." << std::endl;
+                printf("Duplicate trial.\n");
             } else if (status == "INV") {
-                std::cout << "Invalid trial." << std::endl;
+                printf("Invalid trial.\n");
             } else if (status == "NOK") {
-                std::cout << "No ongoing game." << std::endl;
+                printf("No ongoing game.\n");
             } else if (status == "ENT") {
                 std::string key = response.substr(7);
-                std::cout << "No more attempts. The secret key was: " << key << std::endl;
+                printf("No more attempts. The secret key was: %s\n", key.c_str());
             } else if (status == "ETM") {
                 std::string key = response.substr(7);
-                std::cout << "Time exceeded. The secret key was: " << key << std::endl;
+                printf("Time exceeded. The secret key was: %s\n", key.c_str());
             } else if (status == "ERR") {
-                std::cout << "Error in request." << std::endl;
+                printf("Error in request.\n");
             } else {
-                std::cout << "Unknown response status: " << status << std::endl;
+                printf("Unknown response status: %s\n", status.c_str());
             }
         } else {
             std::cerr << "Unexpected response: " << response << std::endl;
@@ -259,19 +260,19 @@ void handleQuit(int plid) {
         std::cerr << "Failed to send quit message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        std::cout << "Server response: " << response << std::endl;
+        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RQT") {
             std::string status = response.substr(4, 2);
             if (status == "OK") {
                 std::string key = response.substr(7);
-                std::cout << "Game terminated. The secret key was: " << key << std::endl;
+                printf("Game terminated. The secret key was: %s\n", key.c_str());
             } else if (status == "NOK") {
-                std::cout << "No ongoing game to terminate." << std::endl;
+                printf("No ongoing game to terminate.\n");
             } else if (status == "ERR") {
-                std::cout << "Error in request." << std::endl;
+                printf("Error in request.\n");
             } else {
-                std::cout << "Unknown response status: " << status << std::endl;
+                printf("Unknown response status: %s\n", status.c_str());
             }
         } else {
             std::cerr << "Unexpected response: " << response << std::endl;
@@ -294,18 +295,18 @@ void handleDebug(int plid, int max_playtime, const std::vector<std::string>& key
         std::cerr << "Failed to send debug message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        std::cout << "Server response: " << response << std::endl;
+        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RDB") {
             std::string status = response.substr(4);
             if (status == "OK") {
-                std::cout << "Debug game started successfully." << std::endl;
+                printf("Debug game started successfully.\n");
             } else if (status == "NOK") {
-                std::cout << "Failed to start debug game: ongoing game exists." << std::endl;
+                printf("Failed to start debug game: ongoing game exists.\n");
             } else if (status == "ERR") {
-                std::cout << "Failed to start debug game: invalid request." << std::endl;
+                printf("Failed to start debug game: invalid request.\n");
             } else {
-                std::cout << "Unknown response status: " << status << std::endl;
+                printf("Unknown response status: %s\n", status.c_str());
             }
         } else {
             std::cerr << "Unexpected response: " << response << std::endl;
@@ -314,53 +315,119 @@ void handleDebug(int plid, int max_playtime, const std::vector<std::string>& key
     }
 }
 
-void cmdParser() {
-    std::string command;
-    while (true) {
-        std::cin >> command;
+bool validateStartCommand(int plid, int max_playtime) {
+    if (plid < 100000 || plid > 999999) {
+        std::cerr << "Invalid player ID. It must be a 6-digit number." << std::endl;
+        return false;
+    }
 
-        if (command == "start") {
+    if (max_playtime < 1 || max_playtime > 600) {
+        std::cerr << "Invalid max playtime. It must be between 1 and 600." << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool validateTryCommand(int plid, const std::vector<std::string>& guess) {
+    if (plid < 100000 || plid > 999999) {
+        std::cerr << "Invalid player ID. It must be a 6-digit number." << std::endl;
+        return false;
+    }
+
+    if (guess.size() != 4) {
+        std::cerr << "Invalid guess. It must have 4 colors." << std::endl;
+        return false;
+    }
+
+    for (const auto& color : guess) {
+        if (color != "R" && color != "G" && color != "B" && color != "Y" &&
+            color != "O" && color != "P") {
+            std::cerr << "Invalid color: " << color << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool validateDebugCommand(int plid, int max_playtime, const std::vector<std::string>& key) {
+    if (plid < 100000 || plid > 999999) {
+        std::cerr << "Invalid player ID. It must be a 6-digit number." << std::endl;
+        return false;
+    }
+
+    if (max_playtime < 1 || max_playtime > 600) {
+        std::cerr << "Invalid max playtime. It must be between 1 and 600." << std::endl;
+        return false;
+    }
+
+    if (key.size() != 4) {
+        std::cerr << "Invalid key. It must have 4 colors." << std::endl;
+        return false;
+    }
+
+    for (const auto& color : key) {
+        if (color != "R" && color != "G" && color != "B" && color != "Y" &&
+            color != "O" && color != "P") {
+            std::cerr << "Invalid color: " << color << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void cmdParser() {
+    char command[BUFFER_SIZE];
+    while (true) {
+        scanf("%s", command);
+
+        if (strcmp(command, "start") == 0) {
             int plid, max_playtime;
-            std::cin >> plid >> max_playtime;
-            handleStart(plid, max_playtime);
-        } else if (command == "try") {
+            scanf("%d %d", &plid, &max_playtime);
+            if (validateStartCommand(plid, max_playtime)) {
+                currentPlayerID = plid;
+                handleStart(plid, max_playtime);
+            }
+        } else if (strcmp(command, "try") == 0) {
             int plid;
-            std::cin >> plid;
+            scanf("%d", &plid);
 
             std::vector<std::string> guess;
             for (int i = 0; i < 4; i++) {
-                std::string color;
-                std::cin >> color;
+                char color[BUFFER_SIZE];
+                scanf("%s", color);
                 guess.push_back(color);
             }
 
-            handleTry(plid, guess);
-        } else if (command == "show") {
-            int plid;
-            std::cin >> plid;
-            handleShowTrials(plid);
-        } else if (command == "scoreboard") {
+            if (validateTryCommand(plid, guess)) {
+                handleTry(plid, guess);
+            }
+        } else if (strcmp(command, "show") == 0) {
+            handleShowTrials(currentPlayerID);
+        } else if (strcmp(command, "scoreboard") == 0) {
             handleScoreboard();
-        } else if (command == "quit") {
-            int plid;
-            std::cin >> plid;
-            handleQuit(plid);
-        } else if (command == "debug") {
+        } else if (strcmp(command, "quit") == 0) {
+            handleQuit(currentPlayerID);
+        } else if (strcmp(command, "debug") == 0) {
             int plid, max_playtime;
-            std::cin >> plid >> max_playtime;
+            scanf("%d %d", &plid, &max_playtime);
 
             std::vector<std::string> key;
             for (int i = 0; i < 4; i++) {
-                std::string color;
-                std::cin >> color;
+                char color[BUFFER_SIZE];
+                scanf("%s", color);
                 key.push_back(color);
             }
 
-            handleDebug(plid, max_playtime, key);
-        } else if (command == "exit") {
+            if (validateDebugCommand(plid, max_playtime, key)) {
+                handleDebug(plid, max_playtime, key);
+            }
+        } else if (strcmp(command, "exit") == 0) {
             break;
         } else {
-            std::cerr << "Invalid command." << std::endl;
+            fprintf(stderr, "Invalid command.\n");
         }
     }
 }
@@ -371,7 +438,7 @@ int create_udp_socket(struct addrinfo **res) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    int status = getaddrinfo(NULL, std::to_string(gsport).c_str(), &hints, res);
+    int status = getaddrinfo(gsip.c_str(), std::to_string(gsport).c_str(), &hints, res);
     if (status != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
         return -1;
@@ -379,13 +446,18 @@ int create_udp_socket(struct addrinfo **res) {
 
     int udp_socket = socket((*res)->ai_family, (*res)->ai_socktype, (*res)->ai_protocol);
     if (udp_socket == -1) {
-        std::cerr << "UDP socket creation error." << std::endl;
+        std::cerr << "UDP socket creation error: " << strerror(errno) << std::endl;
         freeaddrinfo(*res);
         return -1;
     }
 
-    if (bind(udp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
-        std::cerr << "UDP socket bind error." << std::endl;
+    struct sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(gsport);
+    inet_pton(AF_INET, gsip.c_str(), &addr.sin_addr);
+
+    if (bind(udp_socket, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        std::cerr << "UDP socket bind error: " << strerror(errno) << std::endl;
         close(udp_socket);
         freeaddrinfo(*res);
         return -1;
@@ -399,7 +471,7 @@ int create_tcp_socket(struct addrinfo **res) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    int status = getaddrinfo(NULL, std::to_string(gsport).c_str(), &hints, res);
+    int status = getaddrinfo(gsip.c_str(), std::to_string(gsport).c_str(), &hints, res);
     if (status != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
         return -1;
@@ -412,7 +484,12 @@ int create_tcp_socket(struct addrinfo **res) {
         return -1;
     }
 
-    if (bind(tcp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
+    struct sockaddr_in addr = {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(gsport);
+    inet_pton(AF_INET, gsip.c_str(), &addr.sin_addr);
+
+    if (bind(tcp_socket, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
         std::cerr << "TCP socket bind error." << std::endl;
         close(tcp_socket);
         freeaddrinfo(*res);
@@ -439,7 +516,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "GSIP: " << gsip << ", GSPort: " << gsport << std::endl;
+    printf("GSIP: %s, GSPort: %d\n", gsip.c_str(), gsport);
 
     // Criar sockets
     struct addrinfo *udp_res;
