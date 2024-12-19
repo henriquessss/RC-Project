@@ -8,13 +8,15 @@
 
 namespace Game {
 
+    #define MAX_SCORES 10
+
     // Struct SCORELIST
     struct SCORELIST {
-        int score[10];
-        std::string PLID[10];
-        std::string col_code[10];
-        int no_tries[10];
-        std::string mode[10];
+        int score[MAX_SCORES];
+        std::string PLID[MAX_SCORES];
+        std::string col_code[MAX_SCORES];
+        int no_tries[MAX_SCORES];
+        std::string mode[MAX_SCORES];
         int n_scores;
     };
 
@@ -76,14 +78,7 @@ namespace Game {
      * 
      * @return int 
      */
-    int FindPlayerTopScores(SCORELIST list, int plid);
-
-    /**
-     * @brief Returns a vector of strings with the top 10 scores including PLID, number of plays to win, secret key
-     * 
-     * @return std::vector<std::string> A vector containing the top 10 scores
-     */
-    std::vector<std::string> viewScoreboard(int player_id);
+    int FindTopScores(SCORELIST* list);
 
     /**
      * @brief Quits the current game.

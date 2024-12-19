@@ -77,6 +77,7 @@ std::string receiveTCPMessage() {
 }
 
 bool sendTCPMessage(const std::string& message) {
+    std::cout << "Entro aqui"<<std::endl;
     ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
 
     std::cout << "n: " << n << std::endl;
@@ -152,6 +153,7 @@ void handleScoreboard() {
         if (status == "EMPTY\n") {
             printf("Scoreboard is empty.\n");
         } else if (status == "OK\n") {
+            // O PLAYER GRAVA-O LOCALMENTE E DE SEGUIDA imprime o file no terminal linha a linha
             std::string fname;
             int fsize;
             std::istringstream iss(response.substr(10));

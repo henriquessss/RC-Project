@@ -402,56 +402,46 @@ namespace Game {
         }
     }
 
-    /*int FindPlayerTopScores(SCORELIST *list, int plid){
-        struct dirent **filelist;
-        int n_entries, i_file;
+    int FindTopScores(SCORELIST* list) {
+        struct dirent** filelist;
+        int n_entries, i_file = 0;
         char fname[300];
-        FILE *fp;
-        char mode[8];
 
         n_entries = scandir("SCORES/", &filelist, 0, alphasort);
-
-        if (n_entries <= 0)
-            return(0);
-        else {
-            i_file = 0;
-            while (n_entries--){
-                if(filelist[n_entries]->d_name[0]!='.' && i_file < 10){
-                    sprintf(fname, "SCORES/%s", filelist[n_entries]->d_name);
-                    fp = fopen(fname, "r");
-                    if (fp!= NULL){
-
-                        int temp_id, temp_score, temp_tries;
-                        std::string temp_key, temp_mode;
-
-                        fscanf(fp, "%d_%s_%s_%d_%s", &temp_id, &temp_score, temp_key, &temp_tries, temp_mode);
-
-                        if (temp_id == plid) {
-                            list-> score[i_file];
-                            list-> PLID[i_file].c_str();
-                            list-> col_code[i_file].c_str();
-                            list-> no_tries[i_file];
-                            if (!strcmp(mode, "PLAY"))  
-                                list->mode[i_file] = "PLAY";
-                            if (!strcmp(mode, "DEBUG")) 
-                                list->mode[i_file] = "DEBUG";
-                            ++i_file;
-                        }
-                        fclose(fp);
-                    }
-                }
-                free(filelist[n_entries]);
-            }
-            free(filelist);
+        if (n_entries <= 0) {
+            return 0;
         }
 
-        list->n_scores=i_file;
-        return(i_file);
+        while (n_entries--) {
+            if (filelist[n_entries]->d_name[0] != '.' && i_file < MAX_SCORES) {
+                sprintf(fname, "SCORES/%s", filelist[n_entries]->d_name);
+                std::ifstream file(fname);
+
+                if (file.is_open()) {
+                    int temp_score, temp_tries;
+                    std::string temp_plid, temp_colcode, temp_mode;
+
+                    file >> temp_score >> temp_plid >> temp_colcode >> temp_tries >> temp_mode;
+                    list->score[i_file] = temp_score;
+                    list->PLID[i_file] = temp_plid;
+                    list->col_code[i_file] = temp_colcode;
+                    list->no_tries[i_file] = temp_tries;
+
+                    if (temp_mode == "PLAY") {
+                        list->mode[i_file] = "PLAY";
+                    } else if (temp_mode == "DEBUG") {
+                        list->mode[i_file] = "DEBUG";
+                    }
+
+                    file.close();
+                    i_file++;
+                }
+            }
+            free(filelist[n_entries]);
+        }
+        free(filelist);
+
+        list->n_scores = i_file;
+        return i_file;
     }
-
-    std::vector<std::string> viewScoreboard(SCORELIST *list, int player_id){
-        
-        int scores = FindPlayerTopScores(SCORELIST list, player_id);
-    }*/
-
 }

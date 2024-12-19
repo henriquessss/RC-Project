@@ -4,6 +4,7 @@
 #include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <sstream> 
@@ -93,7 +94,38 @@ std::string processShowTrials(int player_id){
     return Game::showTrials(player_id);
 }
 
-std::string processScoreboard(const std::string& message);
+std::string processScoreboard(){
+    Game::SCORELIST topScores;
+    int n_scores = Game::FindTopScores(&topScores);
+
+    if (n_scores == 0){
+        return "RSS EMPTY\n";
+    }
+
+    std::string filename = "scoreboard.txt";
+    std::ofstream scoreBoardFile(filename);
+
+    for ( int i = 0; i < n_scores; i++) {
+        scoreBoardFile << topScores.PLID[i] << " "
+                        << topScores.col_code[i] << " "
+                        << topScores.no_tries[i] << "\n";
+    }
+    scoreBoardFile.close();
+
+    struct stat fileStat;
+    stat(filename.c_str(), &fileStat);
+    int fileSize = fileStat.st_size;
+
+    std::ifstream scoreBoardRead(filename);
+    std::stringstream fileData;
+    fileData << scoreBoardRead.rdbuf();
+    scoreBoardRead.close();
+
+    std::stringstream response;
+    response << "RSS OK " << filename << " " << fileSize << "\n" << fileData.str();
+
+    return response.str();
+}
 
 // Funções Protocolos
 void sendUDPResponse(const std::string& response, int udp_socket, struct sockaddr_in* client_addr, socklen_t addrlen) {
@@ -228,6 +260,8 @@ std::string cmdHandler(const std::string& command){
         } else {
             response = processShowTrials(player_id);
         }
+    } else if (cmd_type == "SSB"){
+        response = processScoreboard();
     } else {
         response = "ERR\n";
     }
