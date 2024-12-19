@@ -27,9 +27,7 @@ namespace Game {
         }
 
         return key;
-
     }
-
 
     // INPUTS ARE ASSUMED TO BE CORRECT AND VALIDATED CLIENT SIDE
     std::vector<std::string> startGame(const int player_id, const int max_playtime) {
@@ -37,7 +35,6 @@ namespace Game {
         std::ifstream file(currentGameFilename);
         
         if (!file) {
-
             std::ofstream newFile(currentGameFilename);
             std::vector<std::string> key = generateKey();
 
@@ -61,7 +58,6 @@ namespace Game {
             std::strftime(time, sizeof(time), "%H:%M:%S", localTime);
 
             newFile << time << std::endl;
-
             newFile << std::to_string(currentTime) << std::endl;
 
             newFile.close();
@@ -75,18 +71,17 @@ namespace Game {
         if (!currentGameFilename.empty()) {
             std::ifstream file(currentGameFilename);
 
-            if (file){
+            if (file) {
                 std::string line;
-
-                std::getline(file,line);
+                std::getline(file, line);
                 int plid = std::stoi(line);
 
-                if (plid == player_id){
-                    std::getline(file,line);
-                    std::getline(file,line);
+                if (plid == player_id) {
+                    std::getline(file, line);
+                    std::getline(file, line);
 
-                    for (char c:line){
-                        key.push_back(std::string(1,c));
+                    for (char c : line) {
+                        key.push_back(std::string(1, c));
                     }
                 }
                 file.close();
@@ -97,11 +92,9 @@ namespace Game {
     }
 
     int debugGame(const int player_id, const int max_playtime, const std::vector<std::string> key) {
-        
         currentGameFilename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
         std::ifstream file(currentGameFilename);
         if (!file) {
-
             std::ofstream newFile(currentGameFilename);
 
             newFile << std::to_string(player_id) << std::endl;
@@ -124,7 +117,6 @@ namespace Game {
             std::strftime(time, sizeof(time), "%H:%M:%S", localTime);
 
             newFile << time << std::endl;
-
             newFile << std::to_string(currentTime) << std::endl;
 
             newFile.close();
@@ -133,9 +125,7 @@ namespace Game {
         } else {
             return 1;
         }
-        
     }
-
 
     std::pair<int, int> validateGuess(const std::vector<std::string>& key, const std::vector<std::string>& guess) {
         int nB = 0; // Cor e posição corretas
@@ -161,14 +151,6 @@ namespace Game {
 
         return {nB, nW};
     }
-
-    /* Function to create directory if it doesn't exist
-    void createDirectory(const std::string& path) {
-        struct stat info;
-        if (stat(path.c_str(), &info) != 0) {
-            mkdir(path.c_str());
-        }
-    }*/
 
     // Função para verificar o estado do jogo
     std::vector<std::string> playAttempt(int plid, const std::vector<std::string>& guess) {
@@ -250,7 +232,7 @@ namespace Game {
         }
 
         // Se o jogo for encerrado
-        if (game_status != "ONGOING"){
+        if (game_status != "ONGOING") {
             std::time_t endTime = std::time(nullptr);
             std::tm* endTm = std::localtime(&endTime);
 
@@ -260,36 +242,33 @@ namespace Game {
             char endTimeStr[9];
             std::strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
 
-        std::stringstream ss;
-        ss << "GAMES/" << player_id << "/" << endDate << "_" << endTimeStr << "_" << game_status[0] << ".txt";
-        std::string newFileName = ss.str();
+            std::stringstream ss;
+            ss << "GAMES/" << player_id << "/" << endDate << "_" << endTimeStr << "_" << game_status[0] << ".txt";
+            std::string newFileName = ss.str();
 
-        // Criar diretoria do jogador se não existir
-        
-        std::system(("mkdir -p GAMES/" + player_id).c_str());
+            // Criar diretoria do jogador se não existir
+            std::system(("mkdir -p GAMES/" + player_id).c_str());
 
-        std::rename(gameFile.c_str(), newFileName.c_str());
+            std::rename(gameFile.c_str(), newFileName.c_str());
 
-        std::ofstream outFinal(newFileName, std::ios::app);
-        outFinal << endDate << " " << endTimeStr << " " << elapsedTime << "\n";
-        outFinal.close();
+            std::ofstream outFinal(newFileName, std::ios::app);
+            outFinal << endDate << " " << endTimeStr << " " << elapsedTime << "\n";
+            outFinal.close();
 
-        
-        // Se o jogo for terminado com sucesso
-        if (game_status == "WIN"){
-            std::string score = "0";
+            // Se o jogo for terminado com sucesso
+            if (game_status == "WIN") {
+                std::string score = "0";
 
-            // Calcular score
+                // Calcular score
+                std::string scoreFileName = "SCORES/" + score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
+                std::ofstream scoreFile(scoreFileName);
 
-            std::string scoreFileName = "SCORES/"+ score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
-            std::ofstream scoreFile(scoreFileName);
+                scoreFile << score << " " << player_id << " " << secretKey << " " << trials << " ";
+                scoreFile << (mode == "P" ? "PLAY" : "DEBUG") << std::endl;
 
-            scoreFile << score << " " << player_id << " " << secretKey << " " << trials << " ";
-            scoreFile << (mode == "P" ? "PLAY" : "DEBUG") << std::endl;
-
-            scoreFile.close();
+                scoreFile.close();
+            }
         }
-    }
         hints = {std::to_string(nB), std::to_string(nW), std::to_string(trials), game_status, secretKey};
         return hints;
     }
