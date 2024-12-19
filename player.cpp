@@ -98,7 +98,7 @@ void handleShowTrials(int plid) {
 
     if (response.substr(0, 3) == "RST") {
         std::string status = response.substr(4, 3);
-        if (status == "ACT" || status == "FIN") {
+        if (status == "ACT\n" || status == "FIN\n") {
             std::string fname;
             int fsize;
             std::istringstream iss(response.substr(8));
@@ -119,7 +119,7 @@ void handleShowTrials(int plid) {
             outfile.close();
 
             printf("File received: %s (%d bytes)\n", fname.c_str(), fsize);
-        } else if (status == "NOK") {
+        } else if (status == "NOK\n") {
             printf("No ongoing or finished game found for player.\n");
         } else {
             std::cerr << "Unknown response status: " << status << std::endl;
@@ -142,9 +142,9 @@ void handleScoreboard() {
 
     if (response.substr(0, 3) == "RSS") {
         std::string status = response.substr(4, 5);
-        if (status == "EMPTY") {
+        if (status == "EMPTY\n") {
             printf("Scoreboard is empty.\n");
-        } else if (status == "OK") {
+        } else if (status == "OK\n") {
             std::string fname;
             int fsize;
             std::istringstream iss(response.substr(10));
@@ -188,11 +188,11 @@ void handleStart(int plid, int max_playtime) {
 
         if (response.substr(0, 3) == "RSG") {
             std::string status = response.substr(4);
-            if (status == "OK") {
+            if (status == "OK\n") {
                 printf("Game started successfully.\n");
-            } else if (status == "NOK") {
+            } else if (status == "NOK\n") {
                 printf("Failed to start game: ongoing game exists.\n");
-            } else if (status == "ERR") {
+            } else if (status == "ERR\n") {
                 printf("Failed to start game: invalid request.\n");
             } else {
                 printf("Unknown response status: %s\n", status.c_str());
@@ -229,19 +229,19 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
                 if (nB == 4) {
                     printf("Congratulations! You've guessed the secret key!\n");
                 }
-            } else if (status == "DUP") {
+            } else if (status == "DUP\n") {
                 printf("Duplicate trial.\n");
-            } else if (status == "INV") {
+            } else if (status == "INV\n") {
                 printf("Invalid trial.\n");
-            } else if (status == "NOK") {
+            } else if (status == "NOK\n") {
                 printf("No ongoing game.\n");
-            } else if (status == "ENT") {
+            } else if (status == "ENT\n") {
                 std::string key = response.substr(7);
                 printf("No more attempts. The secret key was: %s\n", key.c_str());
-            } else if (status == "ETM") {
+            } else if (status == "ETM\n") {
                 std::string key = response.substr(7);
                 printf("Time exceeded. The secret key was: %s\n", key.c_str());
-            } else if (status == "ERR") {
+            } else if (status == "ERR\n") {
                 printf("Error in request.\n");
             } else {
                 printf("Unknown response status: %s\n", status.c_str());
@@ -264,12 +264,12 @@ void handleQuit(int plid) {
 
         if (response.substr(0, 3) == "RQT") {
             std::string status = response.substr(4, 2);
-            if (status == "OK") {
+            if (status == "OK\n") {
                 std::string key = response.substr(7);
                 printf("Game terminated. The secret key was: %s\n", key.c_str());
-            } else if (status == "NOK") {
+            } else if (status == "NOK\n") {
                 printf("No ongoing game to terminate.\n");
-            } else if (status == "ERR") {
+            } else if (status == "ERR\n") {
                 printf("Error in request.\n");
             } else {
                 printf("Unknown response status: %s\n", status.c_str());
@@ -299,11 +299,11 @@ void handleDebug(int plid, int max_playtime, const std::vector<std::string>& key
 
         if (response.substr(0, 3) == "RDB") {
             std::string status = response.substr(4);
-            if (status == "OK") {
+            if (status == "OK\n") {
                 printf("Debug game started successfully.\n");
-            } else if (status == "NOK") {
+            } else if (status == "NOK\n") {
                 printf("Failed to start debug game: ongoing game exists.\n");
-            } else if (status == "ERR") {
+            } else if (status == "ERR\n") {
                 printf("Failed to start debug game: invalid request.\n");
             } else {
                 printf("Unknown response status: %s\n", status.c_str());
