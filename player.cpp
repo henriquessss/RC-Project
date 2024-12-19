@@ -17,7 +17,7 @@
 
 // Global variables
 std::string gsip = "127.0.0.1";
-int gsport = 58078;
+int gsport = 58081;
 int udp_socket;
 int tcp_socket;
 int currentPlayerID;
@@ -404,7 +404,7 @@ void cmdParser() {
             if (validateTryCommand(plid, guess)) {
                 handleTry(plid, guess);
             }
-        } else if (strcmp(command, "show") == 0) {
+        } else if (strcmp(command, "show_trials") == 0) {
             handleShowTrials(currentPlayerID);
         } else if (strcmp(command, "scoreboard") == 0 || strcmp(command, "sb") == 0) {
             handleScoreboard();

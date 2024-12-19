@@ -35,6 +35,14 @@ namespace Game {
     std::vector<std::string> startGame(const int player_id, const int max_playtime);
 
     /**
+     * @brief 
+     * 
+     */
+    int finalizeGame(std::string game_status, std::string player_id,
+                    std::string gameFile, int elapsedTime, std::string mode,
+                    std::string secretKey, int trials);
+
+    /**
      * @brief Processes a play attempt.
      * 
      * @param guess The guess made by the player.

@@ -263,7 +263,14 @@ namespace Game {
             if (game_status == "WIN") {
                 std::string score = "0";
 
-                // Calcular score
+                //Calcular score
+                int trial_penalty = 5.0;
+                int time_scale = 5.0;
+                int score_aux = 100 - (trials * trial_penalty + std::abs(elapsedTime - maxTime) / time_scale);
+                if (score_aux < 1) score = 1;
+                if (score_aux > 100) score = 100;
+                std::string score = std::to_string(score_aux);
+
                 std::string scoreFileName = "SCORES/" + score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
                 std::ofstream scoreFile(scoreFileName);
 
@@ -275,6 +282,50 @@ namespace Game {
         }
         hints = {std::to_string(nB), std::to_string(nW), std::to_string(trials), game_status, secretKey};
         return hints;
+    }
+
+    int finalizeGame(std::string game_status, std::string player_id,
+                    std::string gameFile, int elapsedTime, std::string mode,
+                    std::string secretKey, int trials){
+        if (game_status != "ONGOING") {
+            std::time_t endTime = std::time(nullptr);
+            std::tm* endTm = std::localtime(&endTime);
+
+            char endDate[11];
+            std::strftime(endDate, sizeof(endDate), "%Y-%m-%d", endTm);
+
+            char endTimeStr[9];
+            std::strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
+
+            std::stringstream ss;
+            ss << "GAMES/" << player_id << "/" << endDate << "_" 
+            << endTimeStr << "_" << game_status[0] << ".txt";
+            std::string newFileName = ss.str();
+
+            std::system(("mkdir -p GAMES/" + player_id).c_str());
+
+            std::rename(gameFile.c_str(), newFileName.c_str());
+
+            std::ofstream outFinal(newFileName, std::ios::app);
+            if (outFinal.is_open()) {
+                outFinal << endDate << " " << endTimeStr << " " << elapsedTime << "\n";
+                outFinal.close();
+            }
+
+            if (game_status == "WIN") {
+                std::string score = "0";
+
+                // Calcular score
+                std::string scoreFileName = "SCORES/" + score + "_" + player_id + "_" + endDate + "_" + endTimeStr + ".txt";
+                std::ofstream scoreFile(scoreFileName);
+
+                scoreFile << score << " " << player_id << " " << secretKey << " " << trials << " ";
+                scoreFile << (mode == "P" ? "PLAY" : "DEBUG") << std::endl;
+
+                scoreFile.close();
+            }
+        }
+        return 1;
     }
 
     std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess) {
@@ -305,8 +356,11 @@ namespace Game {
         int startTime = stoi(startTimeStr);
         std::time_t currentTime = std::time(nullptr);
         int elapsedTime = currentTime - startTime;
+        std::string gameStatus = "ONGOING";
 
         if (elapsedTime > maxTime) {
+            gameStatus = "FAIL";
+            finalizeGame(gameStatus, player_id, gameFile, elapsedTime, "", "", 0);
             return "ETM " + secretKey;
         }
 
@@ -344,9 +398,13 @@ namespace Game {
         outFile << " " << nB << " " << nW << " " << elapsedTime << "\n";
         outFile.close();
 
-        if (nB == 4) {
+        if (nB == 4 && trials <= 8) {
+            gameStatus = "WIN";
+            finalizeGame(gameStatus, player_id, gameFile, elapsedTime, mode, secretKey, trials);
             return "OK " + std::to_string(nT) + " " + std::to_string(nB) + " " + std::to_string(nW) + " WIN";
-        } else if (trials >= 7) {
+        } else if (nB != 4 && trials == 7) {
+            gameStatus = "FAIL";
+            finalizeGame(gameStatus, player_id, gameFile, elapsedTime, mode, secretKey, trials);
             return "ENT " + secretKey;
         }
 
