@@ -451,18 +451,7 @@ int create_udp_socket(struct addrinfo **res) {
         return -1;
     }
 
-    struct sockaddr_in addr = {};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(gsport);
-    inet_pton(AF_INET, gsip.c_str(), &addr.sin_addr);
-
-    if (bind(udp_socket, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-        std::cerr << "UDP socket bind error: " << strerror(errno) << std::endl;
-        close(udp_socket);
-        freeaddrinfo(*res);
-        return -1;
-    }
-
+    // No need to bind to a specific port, let the OS choose
     return udp_socket;
 }
 
@@ -484,18 +473,7 @@ int create_tcp_socket(struct addrinfo **res) {
         return -1;
     }
 
-    struct sockaddr_in addr = {};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(gsport);
-    inet_pton(AF_INET, gsip.c_str(), &addr.sin_addr);
-
-    if (bind(tcp_socket, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-        std::cerr << "TCP socket bind error." << std::endl;
-        close(tcp_socket);
-        freeaddrinfo(*res);
-        return -1;
-    }
-
+    // No need to bind to a specific port, let the OS choose
     return tcp_socket;
 }
 

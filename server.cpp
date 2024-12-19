@@ -115,12 +115,12 @@ int create_udp_socket(struct addrinfo **res, int portNumber) {
 
     int udp_socket = socket((*res)->ai_family, (*res)->ai_socktype, (*res)->ai_protocol);
     if (udp_socket == -1) {
-        std::cerr << "UDP socket creation error." << std::endl;
+        std::cerr << "UDP socket creation error: " << strerror(errno) << std::endl;
         return -1;
     }
 
     if (bind(udp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
-        std::cerr << "UDP socket bind error." << std::endl;
+        std::cerr << "UDP socket bind error: " << strerror(errno) << std::endl;
         close(udp_socket);
         return -1;
     }
@@ -142,12 +142,12 @@ int create_tcp_socket(struct addrinfo **res, int portNumber) {
 
     int tcp_socket = socket((*res)->ai_family, (*res)->ai_socktype, (*res)->ai_protocol);
     if (tcp_socket == -1) {
-        std::cerr << "TCP socket creation error." << std::endl;
+        std::cerr << "TCP socket creation error: " << strerror(errno) << std::endl;
         return -1;
     }
 
     if (bind(tcp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
-        std::cerr << "TCP socket bind error." << std::endl;
+        std::cerr << "TCP socket bind error: " << strerror(errno) << std::endl;
         close(tcp_socket);
         return -1; 
     }

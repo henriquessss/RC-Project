@@ -64,6 +64,7 @@ namespace Game {
         
             return key;
         }
+        return {}; // Ensure the function returns a value
     }
 
     std::vector<std::string> quitGame(int player_id) {
