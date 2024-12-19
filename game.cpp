@@ -22,6 +22,9 @@ namespace Game {
         std::vector<std::string> validColors = {"R", "G", "B", "Y", "O", "P"};
         std::vector<std::string> key;
 
+        // Seed the random number generator
+        srand(static_cast<unsigned int>(std::time(nullptr)));
+
         for (int i = 0; i < 4; i++) {
             key.push_back(validColors[rand() % 6]);
         }
