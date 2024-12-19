@@ -93,8 +93,13 @@ std::string processShowTrials(const std::string& message);
 std::string processScoreboard(const std::string& message);
 
 // Funções Protocolos
-void sendUDPResponse(const std::string& response);
-void sendTCPResponse(const std::string& response);
+void sendUDPResponse(const std::string& response, int udp_socket, struct sockaddr_in* client_addr, socklen_t addrlen) {
+    sendto(udp_socket, response.c_str(), response.size(), 0, (struct sockaddr*)client_addr, addrlen);
+}
+
+void sendTCPResponse(const std::string& response, int client_socket) {
+    write(client_socket, response.c_str(), response.size());
+}
 
 int create_udp_socket(struct addrinfo **res, int portNumber) {
     struct addrinfo hints = {};
@@ -238,8 +243,7 @@ void handleUDPRequest(int udp_socket) {
             std::string response = cmdHandler(command);
 
             // Envia resposta
-            sendto(udp_socket, response.c_str(), response.size(), 0,
-                   (struct sockaddr*)&client_addr, addrlen);
+            sendUDPResponse(response, udp_socket, &client_addr, addrlen);
         }
     }
 }
@@ -279,9 +283,7 @@ void handleTCPRequest(int tcp_socket) {
     response = cmdHandler(command); // Fix duplicate declaration
 
     // Envia a resposta ao cliente
-    if (write(client_socket, response.c_str(), response.size()) < 0) {
-        perror("TCP write failed");
-    }
+    sendTCPResponse(response, client_socket);
 
     std::cout << "Response sent: " << response << std::endl;
 
