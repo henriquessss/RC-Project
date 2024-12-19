@@ -273,6 +273,82 @@ namespace Game {
         return hints;
     }
 
+    std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess) {
+        int nB, nW;
+        std::string gameFile = "GAMES/GAME_" + std::to_string(plid) + ".txt";
+        std::ifstream file(gameFile);
+
+        if (!file.is_open()) {
+            return "NOK";
+        }
+
+        std::string line, fileContent;
+        int lineCount = 0;
+
+        while (std::getline(file, line) && lineCount < 7) {
+            fileContent += line + " ";
+            lineCount++;
+        }
+        file.close();
+
+        std::istringstream iss(fileContent);
+        std::string player_id, secretKey, maxTimeStr, startTimeStr;
+        std::string mode, startDate, startHour;
+
+        iss >> player_id >> mode >> secretKey >> maxTimeStr >> startDate >> startHour >> startTimeStr;
+
+        int maxTime = stoi(maxTimeStr);
+        int startTime = stoi(startTimeStr);
+        std::time_t currentTime = std::time(nullptr);
+        int elapsedTime = currentTime - startTime;
+
+        if (elapsedTime > maxTime) {
+            return "ETM " + secretKey;
+        }
+
+        std::vector<std::string> key = {std::string(1, secretKey[0]), std::string(1, secretKey[1]),
+                                        std::string(1, secretKey[2]), std::string(1, secretKey[3])};
+
+        std::ifstream attemptsFile(gameFile);
+        int trials = 0;
+        std::vector<std::string> attempts;
+        while (std::getline(attemptsFile, line)) {
+            if (line.substr(0, 2) == "T:") {
+                attempts.push_back(line);
+                trials++;
+            }
+        }
+        attemptsFile.close();
+
+        if (nT != trials + 1) {
+            return "INV";
+        }
+
+        for (const auto& attempt : attempts) {
+            if (attempt.find(guess[0] + guess[1] + guess[2] + guess[3]) != std::string::npos) {
+                return "DUP";
+            }
+        }
+
+        std::tie(nB, nW) = validateGuess(key, guess);
+
+        std::ofstream outFile(gameFile, std::ios::app);
+        outFile << "T: ";
+        for (const auto& color : guess) {
+            outFile << color;
+        }
+        outFile << " " << nB << " " << nW << " " << elapsedTime << "\n";
+        outFile.close();
+
+        if (nB == 4) {
+            return "OK " + std::to_string(nT) + " " + std::to_string(nB) + " " + std::to_string(nW) + " WIN";
+        } else if (trials >= 7) {
+            return "ENT " + secretKey;
+        }
+
+        return "OK " + std::to_string(nT) + " " + std::to_string(nB) + " " + std::to_string(nW);
+    }
+
     std::vector<std::string> showTrials(int player_id) {
         std::vector<std::string> trials;
         std::string gameFile = "GAMES/GAME_" + std::to_string(player_id) + ".txt";

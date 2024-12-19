@@ -6,14 +6,23 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <sstream> 
+#include <fstream>
 #include "game.h"
+
+// Funções auxiliares
+bool playerHasActiveGame(int player_id) {
+    std::string filename = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
+    std::ifstream file(filename);
+    return file.good();
+}
 
 // Função para processar mensagens do protocolo
 std::string processStart(int player_id, int max_playtime){
     std::string response;
-    //TO-DO: Checkar se este player_id tem um jogo ativo
-    /*if (plid_has_activeGame){
-            response = "RSG NOK"}*/
+    if (playerHasActiveGame(player_id)) {
+        return "RSG NOK\n";
+    }
 
     std::vector<std::string> key;
     key = Game::startGame(player_id, max_playtime);
@@ -22,59 +31,41 @@ std::string processStart(int player_id, int max_playtime){
     for ( int i = 0; i < 4; i++){
         std::cout << key[i] << " ";
     }
-    std::cout std::endl;
+    std::cout << std::endl; 
 
     return "RSG OK\n";
 }
 
-std::string processTry( int player_id, std::string guess, int num_tries){
+std::string processTry(int player_id, const std::vector<std::string>& guess, int num_tries) {
     std::string response;
-    
-    std::vector<std::string> hints = Game::playAttempt(player_id, guess);
-    /*TO-DO: if the secret key guess repeats a previous trial’s guess -> RTR DUP
-    Adicionar o código no playAttempt para fazer essa verificação e adicionar
-    uma string ao return do playAttempt a sinalizar caso seja Dup */
-    if (1){
-        response = "RTR DUP";
-    } else if (atoi(hints[2]) != num_tries){ /*TO-DO: adicionar este caso INV, if the trial number 
-        nT is the expected value minus 1, but the secretkey guess is different from the 
-        one of the previous message?*/
-        response = "RTR INV";
-    } else if(/*TO-DO: !plid_has_activeGame*/){
+    std::string result = Game::playAttempt(player_id, num_tries, guess);
+
+    if (result == "NOK") {
         response = "RTR NOK\n";
-    } else if(atoi(hints[2]) = 8 && hints[3] == "FAIL"){
-        response = "RTR ENT ";
-        for (int i = 0; i < 4; i++){
-            response += hints[4][i] + " ";
-        }
-        response += "\n"
-    } else if(hints[3] == "TIMEOUT"){
-        response = "RTR ETM ";
-        for (int i = 0; i < 4; i++){
-            response += hints[4][i] + " ";
-        }
-        response += "\n";
-    } else {
-        response = "RTR OK " + num_tries + " " + hints[0] + " " + hints[1] + " \n";
+    } else if (result.substr(0, 3) == "ETM") {
+        response = "RTR ETM " + result.substr(4) + "\n";
+    } else if (result == "INV") {
+        response = "RTR INV\n";
+    } else if (result == "DUP") {
+        response = "RTR DUP\n";
+    } else if (result.substr(0, 2) == "OK") {
+        response = "RTR " + result + "\n";
+    } else if (result.substr(0, 3) == "ENT") {
+        response = "RTR ENT " + result.substr(4) + "\n";
     }
 
     std::cout << "PLID=" << player_id << ": try ";
-    for ( int i = 0; i < 4; i++){
-        std::cout << guess[i] << " ";
+    for (const auto& color : guess) {
+        std::cout << color << " ";
     }
-    std::cout << "- nB = " << hints[0] << ", nW = " << hints[1]
-    if (hints[3] == "ONGOING"){
-        std::cout << "; not guessed" << std::endl;
-    } else if (hints[3] == "WIN"){
-        std::cout << ": WIN (game ended)";
-    }
+    std::cout << "- Result: " << result << std::endl;
 
     return response;
 }
 
 std::string processQuit(int player_id){
     std::string response;
-    if (player_has_activeGame){
+    if (playerHasActiveGame(player_id)){
         std::vector<std::string> key = Game::quitGame(player_id);
         response = "RQT OK ";
         for (int i = 0; i < 4; i++) {
@@ -87,9 +78,9 @@ std::string processQuit(int player_id){
     return response;
 }
 
-std::string processDebug(int player_id, int max_playtime, std::vector<std::string> key){
+std::string processDebug(int player_id, int max_playtime, const std::vector<std::string>& key){
     std::string response;
-    if (!player_has_activeGame){
+    if (!playerHasActiveGame(player_id)){
         Game::debugGame(player_id,max_playtime, key);
         response = "RDB OK\n";
     } else {
@@ -153,13 +144,13 @@ int create_tcp_socket(struct addrinfo **res, int portNumber) {
     if (bind(tcp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
         std::cerr << "TCP socket bind error." << std::endl;
         close(tcp_socket);
-        return -1;/
+        return -1; 
     }
 
     return tcp_socket;
 }
 
-std::string cmdHandler(std::string command(buffer)){
+std::string cmdHandler(const std::string& command){ 
     std::istringstream iss(command);
     std::string cmd_type;
     iss >> cmd_type;
@@ -170,58 +161,56 @@ std::string cmdHandler(std::string command(buffer)){
         int player_id, max_playtime;
         iss >> player_id >> max_playtime;
 
-        if (player_id < 100000|| player_id >= 999999 || max_playtime <= 0 ||max_playtime > 600){
+        if (player_id < 100000 || player_id >= 999999 || max_playtime <= 0 || max_playtime > 600){
             response = "RSG ERR\n";
         } else {
             response = processStart(player_id, max_playtime);
         }
     } else if (cmd_type == "TRY"){
         int player_id, num_tries;
-        int guess[4];
+        std::vector<std::string> guess(4); 
 
         iss >> player_id;
-        if (player_id < 100000|| player_id >= 999999){
+        if (player_id < 100000 || player_id >= 999999){
             response = "RTR ERR\n";
         }
         for (int i = 0; i < 4; i++){
-            if ((iss >> guess[i]) == 0){
+            if (!(iss >> guess[i])){
                 response = "RTR ERR\n";
                 break;
-            } else if(guess[i] not in {"R", "G", "B", "Y", "O", "P"}){
-                response = "RTR ERR\n"
+            } else if(guess[i] != "R" && guess[i] != "G" && guess[i] != "B" && guess[i] != "Y" && guess[i] != "O" && guess[i] != "P"){ // Fix syntax
+                response = "RTR ERR\n";
             }
         }
-        if ((iss >> num_tries) == 0 || num_tries <= 0){
+        if (!(iss >> num_tries) || num_tries <= 0){
             response = "TRY ERR\n";
-        } else if (response == ""){
+        } else if (response.empty()){
             response = processTry(player_id, guess, num_tries);
         }
     } else if (cmd_type == "QUT"){
         int player_id;
         iss >> player_id;
         
-        if (player_id < 100000|| player_id >= 999999){
+        if (player_id < 100000 || player_id >= 999999){
             response = "RQT ERR\n";
         } else {
             response = processQuit(player_id);
         }
     } else if (cmd_type == "DBG"){
         int player_id, max_playtime;
-        std::vector<std::string> key;
+        std::vector<std::string> key(4); 
         iss >> player_id >> max_playtime;
         for (int i = 0; i < 4; i++){
             iss >> key[i];
             if (key[i].length() != 1){
-                response = "RDB ERR\n"
+                response = "RDB ERR\n";
             }
         }
-        if (player_id < 100000|| player_id >= 999999 ||
-         max_playtime <= 0 ||max_playtime > 600 ||
-         ){
+        if (player_id < 100000 || player_id >= 999999 || max_playtime <= 0 || max_playtime > 600){
             response = "RDB ERR\n";
-         } else if (response = ""){
+        } else if (response.empty()){
             response = processDebug(player_id, max_playtime, key);
-         }
+        }
     } else if (cmd_type == "STR"){
         /* TO-DO: */
     } else {
@@ -246,7 +235,7 @@ void handleUDPRequest(int udp_socket) {
             std::string command(buffer);
 
             //Função Parse + Process do comando
-            std::string response = cmdHandler(command(buffer));
+            std::string response = cmdHandler(command);
 
             // Envia resposta
             sendto(udp_socket, response.c_str(), response.size(), 0,
@@ -287,7 +276,7 @@ void handleTCPRequest(int tcp_socket) {
     std::string response;
 
     // Trata os comandos STR e SSB
-    std::string response = cmdHandler(command(buffer));
+    response = cmdHandler(command); // Fix duplicate declaration
 
     // Envia a resposta ao cliente
     if (write(client_socket, response.c_str(), response.size()) < 0) {
