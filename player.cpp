@@ -406,7 +406,7 @@ void cmdParser() {
             }
         } else if (strcmp(command, "show") == 0) {
             handleShowTrials(currentPlayerID);
-        } else if (strcmp(command, "scoreboard") == 0) {
+        } else if (strcmp(command, "scoreboard") == 0 || strcmp(command, "sb") == 0) {
             handleScoreboard();
         } else if (strcmp(command, "quit") == 0) {
             handleQuit(currentPlayerID);
