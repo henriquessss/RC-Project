@@ -43,6 +43,16 @@ namespace Game {
     std::vector<std::string> playAttempt(int plid, const std::vector<std::string>& guess);
 
     /**
+     * @brief Processes a play attempt with number of tries.
+     * 
+     * @param plid The player ID.
+     * @param nT The number of tries.
+     * @param guess The guess made by the player.
+     * @return std::string The status of the game after the attempt.
+     */
+    std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess);
+
+    /**
      * @brief Returns a vector of strings with every try in the game file.
      * 
      * @return std::vector<std::string> A vector containing all the tries.
