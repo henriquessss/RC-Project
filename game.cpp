@@ -329,7 +329,7 @@ namespace Game {
         int trials_counter = 0;
         for (const std::string& trial : guesses) {
             trials_counter++;
-            outFile << trials_counter << " - " << trial << "\n";
+            outFile << trials_counter << " - " << trial[0] << " " << trial[1] << " " << trial[2] << " " << trial[3] << "\n";
         }
 
         outFile << remainingTime << " seconds to go!\n";
@@ -351,7 +351,7 @@ namespace Game {
         result.push_back(fileSizeStr);
         result.push_back(content);
 
-        std::string response_aux = result[0] + result[1] + result[2];
+        std::string response_aux = result[0] + " " + result[1] + " " + result[2];
 
         return response_aux;
     }
@@ -359,24 +359,24 @@ namespace Game {
     int readForSummary(const std::string& fname, std::vector<std::string>& guesses) {
         std::ifstream gameFile(fname);
         std::string line;
-            int lineCount = 0;
-            int maxTime, elapsedTime, remainingTime;
+        int lineCount = 0;
+        int maxTime = 0, elapsedTime = 0, remainingTime = 0;
 
-            while (std::getline(gameFile, line)) {
-                if (lineCount == 4){
-                    maxTime = std::stoi(line);
-                }
-                lineCount++;
-                if (line.substr(0, 2) == "T:"){
-                    guesses.push_back(line.substr(3, 12));
-                    std::istringstream iss(line);
-                    std::string secretKey, nB, nW, elapsedTimeStr;
-                    iss >> secretKey >> nB >> nW >> elapsedTimeStr;
-                    elapsedTime = stoi(elapsedTimeStr);
-                    remainingTime = maxTime - elapsedTime;
-                }
+        while (std::getline(gameFile, line)) {
+            if (lineCount == 4) {
+                maxTime = std::stoi(line);
             }
-            gameFile.close();
+            lineCount++;
+            if (line.substr(0, 2) == "T:") {
+                guesses.push_back(line.substr(3, 12));
+                std::istringstream iss(line);
+                std::string secretKey, nB, nW, elapsedTimeStr;
+                iss >> secretKey >> nB >> nW >> elapsedTimeStr;
+                elapsedTime = std::stoi(elapsedTimeStr);
+                remainingTime = maxTime - elapsedTime;
+            }
+        }
+        gameFile.close();
         return remainingTime;
     }
 

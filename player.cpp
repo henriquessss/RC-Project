@@ -112,7 +112,6 @@ std::string receiveTCPMessage() {
 }
 
 bool sendTCPMessage(const std::string& message) {
-    printf("Sent TCP message: %s\n", message.c_str());
 
     ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
 
@@ -133,13 +132,9 @@ void handleShowTrials(int plid) {
 
     std::string response = receiveTCPMessage();
 
-    std::cout << "Response: " << response << std::endl; 
-
-    printf("Server response: %s\n", response.c_str());
-
     if (response.substr(0, 3) == "RST") {
         std::string status = response.substr(4, 3);
-        if (status == "ACT\n" || status == "FIN\n") {
+        if (status == "ACT" || status == "FIN") {
             std::string fname;
             int fsize;
             std::istringstream iss(response.substr(8));
@@ -180,7 +175,6 @@ void handleScoreboard() {
     }
 
     std::string response = receiveTCPMessage();
-    printf("Server response: %s\n", response.c_str());
 
     if (response.substr(0, 3) == "RSS") {
         std::string status = response.substr(4, 5);
@@ -227,7 +221,6 @@ void handleStart(int plid, int max_playtime) {
         std::cerr << "Failed to send start message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RSG") {
             std::string status = response.substr(4);
@@ -261,7 +254,6 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
         std::cerr << "Failed to send try message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        printf("Server response: %s\n", response.c_str());
 
         std::istringstream iss(response);
         std::string prefix, status;
@@ -316,7 +308,6 @@ void handleQuit(int plid) {
         std::cerr << "Failed to send quit message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RQT") {
             std::string status = response.substr(4, 2);
@@ -351,7 +342,6 @@ void handleDebug(int plid, int max_playtime, const std::vector<std::string>& key
         std::cerr << "Failed to send debug message via UDP." << std::endl;
     } else {
         std::string response = receiveUDPMessage();
-        printf("Server response: %s\n", response.c_str());
 
         if (response.substr(0, 3) == "RDB") {
             std::string status = response.substr(4);

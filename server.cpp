@@ -9,6 +9,11 @@
 #include <unistd.h>
 #include <sstream> 
 #include <fstream>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <fcntl.h>
 #include "game.h"
 
 // Funções auxiliares
@@ -160,8 +165,6 @@ int create_udp_socket(struct addrinfo **res, int portNumber) {
         return -1;
     }
 
-    std::cout << "UDP socket bound to 0.0.0.0:" << portNumber << std::endl; // Add logging
-
     return udp_socket;
 }
 
@@ -188,8 +191,6 @@ int create_tcp_socket(struct addrinfo **res, int portNumber) {
         close(tcp_socket);
         return -1; 
     }
-
-    std::cout << "TCP socket bound to 0.0.0.0:" << portNumber << std::endl; // Add logging
 
     return tcp_socket;
 }
@@ -272,46 +273,61 @@ std::string cmdHandler(const std::string& command){
     return response;
 }
 
+struct Request {
+    std::string command;
+    int socket;
+    bool isUDP;
+    struct sockaddr_in client_addr;
+    socklen_t addrlen;
+};
+
+std::queue<Request> requestQueue;
+std::mutex queueMutex;
+std::condition_variable queueCondVar;
+
+void processRequests() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        queueCondVar.wait(lock, [] { return !requestQueue.empty(); });
+
+        Request req = requestQueue.front();
+        requestQueue.pop();
+        lock.unlock();
+
+        std::string response = cmdHandler(req.command);
+
+        if (req.isUDP) {
+            sendUDPResponse(response, req.socket, &req.client_addr, req.addrlen);
+        } else {
+            sendTCPResponse(response, req.socket);
+            close(req.socket);
+        }
+    }
+}
+
 void handleUDPRequest(int udp_socket) {
     struct sockaddr_in client_addr;
     socklen_t addrlen = sizeof(client_addr);
     char buffer[128];
 
-    while (true) {
-        memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, sizeof(buffer));
 
-        // Recebe mensagem
-        ssize_t n = recvfrom(udp_socket, buffer, sizeof(buffer) - 1, 0,
-                             (struct sockaddr*)&client_addr, &addrlen);
-        if (n > 0) {
-            buffer[n] = '\0';
-            std::string command(buffer);
+    // Recebe mensagem
+    ssize_t n = recvfrom(udp_socket, buffer, sizeof(buffer) - 1, 0,
+                         (struct sockaddr*)&client_addr, &addrlen);
+    if (n > 0) {
+        buffer[n] = '\0';
+        std::string command(buffer);
 
-            //Função Parse + Process do comando
-            std::string response = cmdHandler(command);
-
-            // Envia resposta
-            sendUDPResponse(response, udp_socket, &client_addr, addrlen);
-        }
+        std::unique_lock<std::mutex> lock(queueMutex);
+        requestQueue.push({command, udp_socket, true, client_addr, addrlen});
+        lock.unlock();
+        queueCondVar.notify_one();
     }
 }
 
-void handleTCPRequest(int tcp_socket) {
-    struct sockaddr_in client_addr;
-    socklen_t addrlen = sizeof(client_addr);
-
+void handleTCPConnection(int client_socket, struct sockaddr_in client_addr, socklen_t addrlen) {
     char buffer[128];
-
-    // Aceita conexão do cliente
-    int client_socket = accept(tcp_socket, (struct sockaddr*)&client_addr, &addrlen);
-    if (client_socket < 0) {
-        perror("TCP accept failed");
-        return;
-    }
-
-    std::cout << "Client connected via TCP." << std::endl;
-
-    // Recebe o comando do cliente
     memset(buffer, 0, sizeof(buffer));
     ssize_t n = read(client_socket, buffer, sizeof(buffer) - 1);
     if (n <= 0) {
@@ -323,24 +339,24 @@ void handleTCPRequest(int tcp_socket) {
     buffer[n] = '\0';
     std::string command(buffer);
 
-    std::cout << "Received TCP command: " << command << std::endl;
-
-    std::string response;
-
-    // Trata os comandos STR e SSB
-    response = cmdHandler(command); // Fix duplicate declaration
-
-    // Envia a resposta ao cliente
-    sendTCPResponse(response, client_socket);
-
-    std::cout << "Response sent: " << response << std::endl;
-
-    // Fecha a conexão com o cliente
-    close(client_socket);
-    std::cout << "Client disconnected." << std::endl;
+    std::unique_lock<std::mutex> lock(queueMutex);
+    requestQueue.push({command, client_socket, false, client_addr, addrlen});
+    lock.unlock();
+    queueCondVar.notify_one();
 }
 
+void handleTCPRequest(int tcp_socket) {
+    struct sockaddr_in client_addr;
+    socklen_t addrlen = sizeof(client_addr);
 
+    int client_socket = accept(tcp_socket, (struct sockaddr*)&client_addr, &addrlen);
+    if (client_socket < 0) {
+        perror("TCP accept failed");
+        return;
+    }
+
+    std::thread(handleTCPConnection, client_socket, client_addr, addrlen).detach();
+}
 
 // Função principal do servidor
 int main(int argc, char *argv[]) {
@@ -376,6 +392,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Set UDP and TCP sockets to non-blocking mode
+    int flags = fcntl(udp_socket, F_GETFL, 0);
+    fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
+
+    flags = fcntl(tcp_socket, F_GETFL, 0);
+    fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
+
+    std::thread workerThread(processRequests);
+
     fd_set readfds;
     int max_sd = std::max(udp_socket, tcp_socket);
 
@@ -398,6 +423,8 @@ int main(int argc, char *argv[]) {
             handleTCPRequest(tcp_socket);
         }
     }
+
+    workerThread.join();
 
     freeaddrinfo(udp_res);
     freeaddrinfo(tcp_res);

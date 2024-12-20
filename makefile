@@ -36,6 +36,11 @@ player.o: player.cpp game.h
 clean:
 	rm -f *.o $(SERVER_BIN) $(PLAYER_BIN)
 
+# Limpar a diretoria GAMES
+cleanData:
+	rm -rf GAMES
+	mkdir GAMES
+
 
 
 
