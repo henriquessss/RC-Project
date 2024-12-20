@@ -96,7 +96,28 @@ std::string processDebug(int player_id, int max_playtime, const std::vector<std:
 }
 
 std::string processShowTrials(int player_id){
-    return Game::showTrials(player_id);
+    std::string response;
+    std::string summaryFile = Game::showTrials(player_id);
+    if (summaryFile == "RST NOK") {
+        return "RST NOK\n";
+    }
+
+    struct stat fileStat;
+    stat(summaryFile.c_str(), &fileStat);
+    int fileSize = fileStat.st_size;
+
+    std::ifstream file(summaryFile);
+    std::stringstream fileData;
+    fileData << file.rdbuf();
+    file.close();
+
+    if (playerHasActiveGame(player_id)) {
+        response = "RST ACT " + summaryFile + " " + std::to_string(fileSize) + "\n" + fileData.str();
+    } else {
+        response = "RST FIN " + summaryFile + " " + std::to_string(fileSize) + "\n" + fileData.str();
+    }
+
+    return response;
 }
 
 std::string processScoreboard(){

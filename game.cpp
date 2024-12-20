@@ -388,15 +388,14 @@ namespace Game {
 
         if (file.is_open()) { //se houver ficheiro ativo
             int remainingTime = readForSummary(gameFile, guesses);
-
-            return "RST ACT " + createSummaryFile(player_id, guesses, remainingTime);
+            return createSummaryFile(player_id, guesses, remainingTime);
         } else { // se n houver
             char fname[256];
             std::string plid = std::to_string(player_id);
 
             if (FindLastGame(plid, fname)){
                 int remainingTime = readForSummary(fname, guesses);
-                return "RST FIN " + createSummaryFile(player_id, guesses, remainingTime);
+                return createSummaryFile(player_id, guesses, remainingTime);
             }
             return "RST NOK";
         }

@@ -139,12 +139,15 @@ void handleShowTrials(int plid) {
             int fsize;
             std::istringstream iss(response.substr(8));
             iss >> fname >> fsize;
+            fname = fname.substr(0, fname.size() - 4) + "_copy.txt";
 
             std::ofstream outfile(fname, std::ios::binary);
             char buffer[BUFFER_SIZE];
-            int bytes_received = 0;
-            while (bytes_received < fsize) {
-                ssize_t n = recv(tcp_socket, buffer, std::min(BUFFER_SIZE, fsize - bytes_received), 0);
+            int bytes_received = response.size() - 8 - fname.size() - 1 - std::to_string(fsize).size() + 4; // Adjusted to start 4 characters before
+            outfile.write(response.c_str() + response.size() - bytes_received, bytes_received - 4); // Adjusted to end 4 characters earlier
+
+            while (bytes_received < fsize - 4) { // Adjusted to end 4 characters earlier
+                ssize_t n = recv(tcp_socket, buffer, (BUFFER_SIZE < (fsize - bytes_received - 4)) ? BUFFER_SIZE : (fsize - bytes_received - 4), 0); // Adjusted to end 4 characters earlier
                 if (n <= 0) {
                     std::cerr << "Failed to receive file data via TCP." << std::endl;
                     return;
@@ -181,17 +184,19 @@ void handleScoreboard() {
         if (status == "EMPTY\n") {
             printf("Scoreboard is empty.\n");
         } else if (status == "OK\n") {
-            // O PLAYER GRAVA-O LOCALMENTE E DE SEGUIDA imprime o file no terminal linha a linha
             std::string fname;
             int fsize;
             std::istringstream iss(response.substr(10));
             iss >> fname >> fsize;
+            fname += "_copy";
 
             std::ofstream outfile(fname, std::ios::binary);
             char buffer[BUFFER_SIZE];
-            int bytes_received = 0;
-            while (bytes_received < fsize) {
-                ssize_t n = recv(tcp_socket, buffer, std::min(BUFFER_SIZE, fsize - bytes_received), 0);
+            int bytes_received = response.size() - 10 - fname.size() - 1 - std::to_string(fsize).size() + 4; // Adjusted to start 4 characters before
+            outfile.write(response.c_str() + response.size() - bytes_received, bytes_received - 4); // Adjusted to end 4 characters earlier
+
+            while (bytes_received < fsize - 4) { // Adjusted to end 4 characters earlier
+                ssize_t n = recv(tcp_socket, buffer, (BUFFER_SIZE < (fsize - bytes_received - 4)) ? BUFFER_SIZE : (fsize - bytes_received - 4), 0); // Adjusted to end 4 characters earlier
                 if (n <= 0) {
                     std::cerr << "Failed to receive file data via TCP." << std::endl;
                     return;
