@@ -112,6 +112,8 @@ std::string receiveTCPMessage() {
 }
 
 bool sendTCPMessage(const std::string& message) {
+    printf("Sent TCP message: %s\n", message.c_str());
+
     ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
 
     if (n == -1) {
@@ -527,7 +529,14 @@ int create_tcp_socket(struct addrinfo **res) {
         return -1;
     }
 
-    // No need to bind to a specific port, let the OS choose
+    // Connect to the server
+    if (connect(tcp_socket, (*res)->ai_addr, (*res)->ai_addrlen) == -1) {
+        std::cerr << "TCP socket connection error: " << strerror(errno) << std::endl;
+        close(tcp_socket);
+        freeaddrinfo(*res);
+        return -1;
+    }
+
     return tcp_socket;
 }
 
