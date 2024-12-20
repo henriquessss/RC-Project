@@ -101,18 +101,22 @@ namespace Game {
      * @param player_id The ID of the player.
      * @param guesses The player's guesses.
      * @param remainingTime The remaining time for the game.
+     * @param nB The number of correct positions for each guess.
+     * @param nW The number of correct colors for each guess.
      * @return The name of the summary file.
      */
-    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime);
+    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime, std::vector<std::string>& nB, std::vector<std::string>& nW);
 
     /**
      * @brief Reads the game file for summary creation.
      * 
      * @param fname The name of the game file.
      * @param guesses The player's guesses.
+     * @param nB The number of correct positions for each guess.
+     * @param nW The number of correct colors for each guess.
      * @return The remaining time for the game.
      */
-    int readForSummary(const std::string& fname, std::vector<std::string>& guesses);
+    int readForSummary(const std::string& fname, std::vector<std::string>& guesses, std::vector<std::string>& nB, std::vector<std::string>& nW);
 
     /**
      * @brief Shows the trials made by the player.

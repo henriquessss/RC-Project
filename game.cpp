@@ -343,7 +343,7 @@ namespace Game {
         return found;
     }
 
-    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime) {
+    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime, std::vector<std::string>& nB, std::vector<std::string>& nW) {
         std::string summaryFile = "GAMES/SUMMARY_" + std::to_string(player_id) + ".txt";
         std::ofstream outFile(summaryFile);
         std::vector<std::string> result;
@@ -354,12 +354,12 @@ namespace Game {
         }
 
         int trials_counter = 0;
-        for (const std::string& trial : guesses) {
+        for (size_t i = 0; i < guesses.size(); ++i) {
             trials_counter++;
-            outFile << trials_counter << " - " << trial[0] << " " << trial[1] << " " << trial[2] << " " << trial[3] << "\n";
+            outFile << guesses[i][0] << " " << guesses[i][1] << " " << guesses[i][2] << " " << guesses[i][3] << " " << nB[i] << " " << nW[i] << "\n";
         }
 
-        outFile << remainingTime << " seconds to go!\n";
+        outFile << remainingTime;
 
         outFile.close();
 
@@ -369,9 +369,9 @@ namespace Game {
 
         std::string content = fileContent.str();
 
-        //Calcular o tamanho do arquivo
+        // Calculate the file size
         std::ifstream file(summaryFile, std::ios::binary);
-        file.seekg(0, std::ios::end);  // Vai até o final do arquivo
+        file.seekg(0, std::ios::end);
         std::string fileSizeStr = std::to_string(file.tellg());
 
         result.push_back(summaryFile);
@@ -383,7 +383,7 @@ namespace Game {
         return response_aux;
     }
 
-    int readForSummary(const std::string& fname, std::vector<std::string>& guesses) {
+    int readForSummary(const std::string& fname, std::vector<std::string>& guesses, std::vector<std::string>& nB, std::vector<std::string>& nW) {
         std::ifstream gameFile(fname);
         std::string line;
         int lineCount = 0;
@@ -409,20 +409,22 @@ namespace Game {
 
     std::string showTrials(int player_id) {
         std::vector<std::string> guesses;
+        std::vector<std::string> nB;
+        std::vector<std::string> nW;
         std::string gameFile = "GAMES/GAME_" + std::to_string(player_id) + ".txt";
         std::ifstream file(gameFile);
         std::string response;
 
         if (file.is_open()) { //se houver ficheiro ativo
-            int remainingTime = readForSummary(gameFile, guesses);
-            return createSummaryFile(player_id, guesses, remainingTime);
+            int remainingTime = readForSummary(gameFile, guesses, nB, nW);
+            return createSummaryFile(player_id, guesses, remainingTime, nB, nW);
         } else { // se n houver
             char fname[256];
             std::string plid = std::to_string(player_id);
 
             if (FindLastGame(plid, fname)){
-                int remainingTime = readForSummary(fname, guesses);
-                return createSummaryFile(player_id, guesses, remainingTime);
+                int remainingTime = readForSummary(fname, guesses, nB, nW);
+                return createSummaryFile(player_id, guesses, remainingTime, nB, nW);
             }
             return "RST NOK";
         }
