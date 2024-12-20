@@ -17,7 +17,7 @@
 
 // Global variables
 std::string gsip = "127.0.0.1";
-int gsport = 58089;
+int gsport = 58078;
 int udp_socket;
 int tcp_socket;
 int currentPlayerID;
@@ -27,6 +27,23 @@ std::string receiveUDPMessage() {
     struct sockaddr_in server_addr;
     socklen_t addrlen = sizeof(server_addr);
     char buffer[BUFFER_SIZE];
+
+    fd_set read_fds;
+    struct timeval timeout;
+    timeout.tv_sec = 30;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&read_fds);
+    FD_SET(udp_socket, &read_fds);
+
+    int ret = select(udp_socket + 1, &read_fds, NULL, NULL, &timeout);
+    if (ret == -1) {
+        std::cerr << "Select error: " << strerror(errno) << std::endl;
+        return "";
+    } else if (ret == 0) {
+        std::cerr << "No server response. Request timed out." << std::endl;
+        return "";
+    }
 
     memset(buffer, 0, sizeof(buffer));
     ssize_t n = recvfrom(udp_socket, buffer, sizeof(buffer) - 1, 0,
@@ -66,6 +83,24 @@ bool sendUDPMessage(const std::string& message) {
 
 std::string receiveTCPMessage() {
     char buffer[BUFFER_SIZE];
+
+    fd_set read_fds;
+    struct timeval timeout;
+    timeout.tv_sec = 30;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&read_fds);
+    FD_SET(tcp_socket, &read_fds);
+
+    int ret = select(tcp_socket + 1, &read_fds, NULL, NULL, &timeout);
+    if (ret == -1) {
+        std::cerr << "Select error: " << strerror(errno) << std::endl;
+        return "";
+    } else if (ret == 0) {
+        std::cerr << "No server response. Request timed out." << std::endl;
+        return "";
+    }
+
     ssize_t n = recv(tcp_socket, buffer, sizeof(buffer) - 1, 0);
     if (n <= 0) {
         std::cerr << "Failed to receive response via TCP." << std::endl;
@@ -77,13 +112,10 @@ std::string receiveTCPMessage() {
 }
 
 bool sendTCPMessage(const std::string& message) {
-    std::cout << "Entro aqui"<<std::endl;
     ssize_t n = send(tcp_socket, message.c_str(), message.size(), 0);
 
-    std::cout << "n: " << n << std::endl;
-    
     if (n == -1) {
-        std::cerr << "Failed to send message via TCP." << std::endl;
+        std::cerr << "Failed to send message via TCP: " << strerror(errno) << std::endl;
         return false;
     }
     return true;
