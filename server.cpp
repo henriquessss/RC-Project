@@ -73,9 +73,9 @@ std::string processQuit(int player_id){
     std::string response;
     if (playerHasActiveGame(player_id)){
         std::vector<std::string> key = Game::quitGame(player_id);
-        response = "RQT OK ";
+        response = "RQT OK";
         for (int i = 0; i < 4; i++) {
-            response += key[i] + " ";
+            response += " " + key[i];
         }
         response += "\n";
     } else {
