@@ -158,6 +158,12 @@ void handleShowTrials(int plid) {
             outfile.close();
 
             printf("File received: %s (%d bytes)\n", fname.c_str(), fsize);
+
+            std::ifstream infile(fname);
+            std::string line;
+            while (std::getline(infile, line)) {
+                std::cout << line << std::endl;
+            }
         } else if (status == "NOK\n") {
             printf("No ongoing or finished game found for player.\n");
         } else {
