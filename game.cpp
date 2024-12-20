@@ -204,6 +204,7 @@ namespace Game {
                 scoreFile << (mode == "P" ? "PLAY" : "DEBUG") << std::endl;
 
                 scoreFile.close();
+
             }
         }
         return 1;
@@ -281,7 +282,7 @@ namespace Game {
 
         if (nB == 4 && trials <= 8) {
             gameStatus = "WIN";
-            finalizeGame(gameStatus, player_id, gameFile, elapsedTime, maxTime, mode, secretKey, trials);
+            finalizeGame(gameStatus, player_id, gameFile, elapsedTime, maxTime, mode, secretKey, trials + 1);
             return "OK " + std::to_string(nT) + " " + std::to_string(nB) + " " + std::to_string(nW) + " WIN";
         } else if (nB != 4 && trials == 7) {
             gameStatus = "FAIL";
@@ -363,13 +364,13 @@ namespace Game {
         int maxTime = 0, elapsedTime = 0, remainingTime = 0;
 
         while (std::getline(gameFile, line)) {
-            if (lineCount == 4) {
+            if (lineCount == 3) {
                 maxTime = std::stoi(line);
             }
             lineCount++;
             if (line.substr(0, 2) == "T:") {
                 guesses.push_back(line.substr(3, 12));
-                std::istringstream iss(line);
+                std::istringstream iss(line.substr(3));
                 std::string secretKey, nB, nW, elapsedTimeStr;
                 iss >> secretKey >> nB >> nW >> elapsedTimeStr;
                 elapsedTime = std::stoi(elapsedTimeStr);

@@ -122,7 +122,23 @@ bool sendTCPMessage(const std::string& message) {
     return true;
 }
 
+int create_tcp_socket(struct addrinfo **res); // Function declaration
+
+bool reconnectTCP() {
+    close(tcp_socket);
+    struct addrinfo *tcp_res;
+    tcp_socket = create_tcp_socket(&tcp_res);
+    if (tcp_socket == -1) {
+        std::cerr << "Failed to reconnect TCP socket." << std::endl;
+        return false;
+    }
+    freeaddrinfo(tcp_res);
+    return true;
+}
+
 void handleShowTrials(int plid) {
+    if (!reconnectTCP()) return; // Reconnect TCP socket
+
     std::string message = "STR " + std::to_string(plid) + "\n";
 
     if (!sendTCPMessage(message)) {
@@ -176,6 +192,8 @@ void handleShowTrials(int plid) {
 }
 
 void handleScoreboard() {
+    if (!reconnectTCP()) return; // Reconnect TCP socket
+
     std::string message = "SSB\n";
 
     if (!sendTCPMessage(message)) {
@@ -187,19 +205,19 @@ void handleScoreboard() {
 
     if (response.substr(0, 3) == "RSS") {
         std::string status = response.substr(4, 5);
-        if (status == "EMPTY\n") {
+        if (status == "EMPTY") {
             printf("Scoreboard is empty.\n");
-        } else if (status == "OK\n") {
+        } else if (status.substr(0, 2) == "OK") {
             std::string fname;
             int fsize;
-            std::istringstream iss(response.substr(10));
+            std::istringstream iss(response.substr(7));
             iss >> fname >> fsize;
-            fname += "_copy";
+            fname = fname.substr(0, fname.size() - 4) + "_copy.txt";
 
             std::ofstream outfile(fname, std::ios::binary);
             char buffer[BUFFER_SIZE];
-            int bytes_received = response.size() - 10 - fname.size() - 1 - std::to_string(fsize).size() + 4; // Adjusted to start 4 characters before
-            outfile.write(response.c_str() + response.size() - bytes_received, bytes_received - 4); // Adjusted to end 4 characters earlier
+            int bytes_received = response.size() - 7 - fname.size() - 1 - std::to_string(fsize).size() + 4; 
+            outfile.write(response.c_str() + response.size() - bytes_received, bytes_received); 
 
             while (bytes_received < fsize - 4) { // Adjusted to end 4 characters earlier
                 ssize_t n = recv(tcp_socket, buffer, (BUFFER_SIZE < (fsize - bytes_received - 4)) ? BUFFER_SIZE : (fsize - bytes_received - 4), 0); // Adjusted to end 4 characters earlier
@@ -213,6 +231,12 @@ void handleScoreboard() {
             outfile.close();
 
             printf("File received: %s (%d bytes)\n", fname.c_str(), fsize);
+
+            std::ifstream infile(fname);
+            std::string line;
+            while (std::getline(infile, line)) {
+                std::cout << line << std::endl;
+            }
         } else {
             std::cerr << "Unknown response status: " << status << std::endl;
         }
@@ -437,19 +461,30 @@ bool validateDebugCommand(int plid, int max_playtime, const std::vector<std::str
 
 void cmdParser() {
     char command[BUFFER_SIZE];
+    bool gameStarted = false; // Track if a game has been started
+
     while (true) {
         scanf("%s", command);
 
         if (strcmp(command, "start") == 0) {
             int plid, max_playtime;
             scanf("%d %d", &plid, &max_playtime);
+            if (gameStarted && plid != currentPlayerID) {
+                std::cerr << "A game has already been started with a different player ID." << std::endl;
+                continue;
+            }
             if (validateStartCommand(plid, max_playtime)) {
                 currentPlayerID = plid;
+                gameStarted = true;
                 handleStart(plid, max_playtime);
             }
         } else if (strcmp(command, "try") == 0) {
             int plid;
             scanf("%d", &plid);
+            if (gameStarted && plid != currentPlayerID) {
+                std::cerr << "A game has already been started with a different player ID." << std::endl;
+                continue;
+            }
 
             std::vector<std::string> guess;
             for (int i = 0; i < 4; i++) {
@@ -467,9 +502,14 @@ void cmdParser() {
             handleScoreboard();
         } else if (strcmp(command, "quit") == 0) {
             handleQuit(currentPlayerID);
+            gameStarted = false; // Reset gameStarted flag after quitting
         } else if (strcmp(command, "debug") == 0) {
             int plid, max_playtime;
             scanf("%d %d", &plid, &max_playtime);
+            if (gameStarted && plid != currentPlayerID) {
+                std::cerr << "A game has already been started with a different player ID." << std::endl;
+                continue;
+            }
 
             std::vector<std::string> key;
             for (int i = 0; i < 4; i++) {

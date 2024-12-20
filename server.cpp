@@ -350,14 +350,15 @@ void handleUDPRequest(int udp_socket) {
 void handleTCPConnection(int client_socket, struct sockaddr_in client_addr, socklen_t addrlen) {
     char buffer[128];
     memset(buffer, 0, sizeof(buffer));
-    ssize_t n = read(client_socket, buffer, sizeof(buffer) - 1);
-    if (n <= 0) {
+    ssize_t bytesRead = read(client_socket, buffer, sizeof(buffer));
+    if (bytesRead < 0) {
         perror("TCP read failed");
-        close(client_socket);
-        return;
+    } else if (bytesRead == 0) {
+        // Handle end of file (connection closed by peer)
+        std::cerr << "Connection closed by peer" << std::endl;
     }
 
-    buffer[n] = '\0';
+    buffer[bytesRead] = '\0';
     std::string command(buffer);
 
     std::unique_lock<std::mutex> lock(queueMutex);

@@ -37,7 +37,8 @@ clean:
 	rm -f *.o $(SERVER_BIN) $(PLAYER_BIN)
 	rm -rf GAMES
 	mkdir GAMES
-
+	rm -rf SCORES
+	mkdir SCORES
 
 
 
