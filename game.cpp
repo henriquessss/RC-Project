@@ -257,7 +257,13 @@ namespace Game {
         if (elapsedTime > maxTime) {
             gameStatus = "FAIL";
             finalizeGame(gameStatus, player_id, gameFile, elapsedTime, 0, "", "", 0);
-            return "ETM " + secretKey;
+            std::string spacedKey;
+            for (char c : secretKey) {
+                spacedKey += c;
+                spacedKey += ' ';
+            }
+            spacedKey.pop_back(); // Remove the trailing space
+            return "ETM " + spacedKey;
         }
 
         std::vector<std::string> key = {std::string(1, secretKey[0]), std::string(1, secretKey[1]),
