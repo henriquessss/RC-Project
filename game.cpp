@@ -82,11 +82,25 @@ namespace Game {
 
                 if (plid == player_id) {
                     std::getline(file, line);
+                    std::string mode = line;
                     std::getline(file, line);
 
                     for (char c : line) {
                         key.push_back(std::string(1, c));
                     }
+
+                    std::getline(file, line); // max_playtime
+                    int max_playtime = std::stoi(line);
+
+                    std::getline(file, line); // start_date
+                    std::getline(file, line); // start_time
+                    std::getline(file, line); // start_timestamp
+                    int start_timestamp = std::stoi(line);
+
+                    std::time_t currentTime = std::time(nullptr);
+                    int elapsedTime = currentTime - start_timestamp;
+
+                    finalizeGame("FAIL", std::to_string(player_id), currentGameFilename, elapsedTime, 0, "", "", 0);
                 }
                 file.close();
             }

@@ -329,7 +329,7 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
                 trial_number--;
                 printf("Unknown response status: %s\n", status.c_str());
             }
-        } else {
+        } else if (!response.empty()) {
             std::cerr << "Unexpected response: " << response << std::endl;
             sendUDPMessage("ERR\n");
         }
@@ -345,8 +345,8 @@ void handleQuit(int plid) {
         std::string response = receiveUDPMessage();
 
         if (response.substr(0, 3) == "RQT") {
-            std::string status = response.substr(4, 2);
-            if (status == "OK\n") {
+            std::string status = response.substr(4);
+            if (status.substr(0, 2) == "OK") {
                 std::string key = response.substr(7);
                 printf("Game terminated. The secret key was: %s\n", key.c_str());
             } else if (status == "NOK\n") {

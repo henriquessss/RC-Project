@@ -41,7 +41,7 @@ namespace Game {
      * 
      */
     int finalizeGame(std::string game_status, std::string player_id,
-                    std::string gameFile, int elapsedTime, std::string mode,
+                    std::string gameFile, int elapsedTime, int maxTime, std::string mode,
                     std::string secretKey, int trials);
 
     /**
@@ -106,13 +106,7 @@ namespace Game {
      */
     std::pair<int, int> validateGuess(const std::vector<std::string>& key, const std::vector<std::string>& guess);
 
-    /**
-     * @brief Creates a directory if it doesn't exist.
-     * 
-     * @param path The path of the directory to create.
-     */
-    void createDirectory(const std::string& path);
 
 }
 
-#endif // GAME_H
+#endif 
