@@ -178,10 +178,10 @@ namespace Game {
             std::tm* endTm = std::localtime(&endTime);
 
             char endDate[11];
-            std::strftime(endDate, sizeof(endDate), "%Y-%m-%d", endTm);
+            std::strftime(endDate, sizeof(endDate), "%Y%m%d", endTm);
 
             char endTimeStr[9];
-            std::strftime(endTimeStr, sizeof(endTimeStr), "%H:%M:%S", endTm);
+            std::strftime(endTimeStr, sizeof(endTimeStr), "%H%M%S", endTm);
 
             std::stringstream ss;
             ss << "GAMES/" << player_id << "/" << endDate << "_" 

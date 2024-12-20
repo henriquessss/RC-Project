@@ -133,8 +133,11 @@ std::string processScoreboard(){
 
     for ( int i = 0; i < n_scores; i++) {
         scoreBoardFile << topScores.PLID[i] << " "
-                        << topScores.col_code[i] << " "
-                        << topScores.no_tries[i] << "\n";
+                   << topScores.no_tries[i] << " "
+                   << topScores.col_code[i][0] << " "
+                   << topScores.col_code[i][1] << " "
+                   << topScores.col_code[i][2] << " "
+                   << topScores.col_code[i][3] << "\n";
     }
     scoreBoardFile.close();
 
