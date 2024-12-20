@@ -410,15 +410,18 @@ bool validateStartCommand(int plid, int max_playtime) {
     return true;
 }
 
-bool validateTryCommand(int plid, const std::vector<std::string>& guess) {
-    if (plid < 100000 || plid > 999999) {
-        std::cerr << "Invalid player ID. It must be a 6-digit number." << std::endl;
-        return false;
-    }
+bool validateTryCommand(const std::vector<std::string>& guess) {
 
     if (guess.size() != 4) {
         std::cerr << "Invalid guess. It must have 4 colors." << std::endl;
         return false;
+    }
+
+    for (const auto& color : guess) {
+        if (color.empty()) {
+            std::cerr << "Invalid guess. It must have 4 colors." << std::endl;
+            return false;
+        }
     }
 
     for (const auto& color : guess) {
@@ -464,11 +467,15 @@ void cmdParser() {
     bool gameStarted = false; // Track if a game has been started
 
     while (true) {
-        scanf("%s", command);
+        std::cin.getline(command, BUFFER_SIZE);
 
-        if (strcmp(command, "start") == 0) {
+        std::istringstream iss(command);
+        std::string cmd;
+        iss >> cmd;
+
+        if (cmd == "start") {
             int plid, max_playtime;
-            scanf("%d %d", &plid, &max_playtime);
+            iss >> plid >> max_playtime;
             if (gameStarted && plid != currentPlayerID) {
                 std::cerr << "A game has already been started with a different player ID." << std::endl;
                 continue;
@@ -478,34 +485,27 @@ void cmdParser() {
                 gameStarted = true;
                 handleStart(plid, max_playtime);
             }
-        } else if (strcmp(command, "try") == 0) {
-            int plid;
-            scanf("%d", &plid);
-            if (gameStarted && plid != currentPlayerID) {
-                std::cerr << "A game has already been started with a different player ID." << std::endl;
-                continue;
-            }
-
+        } else if (cmd == "try") {
             std::vector<std::string> guess;
             for (int i = 0; i < 4; i++) {
-                char color[BUFFER_SIZE];
-                scanf("%s", color);
+                std::string color;
+                iss >> color;
                 guess.push_back(color);
             }
 
-            if (validateTryCommand(plid, guess)) {
-                handleTry(plid, guess);
+            if (validateTryCommand(guess)) {
+                handleTry(currentPlayerID, guess);
             }
-        } else if (strcmp(command, "show_trials") == 0) {
+        } else if (cmd == "show_trials") {
             handleShowTrials(currentPlayerID);
-        } else if (strcmp(command, "scoreboard") == 0 || strcmp(command, "sb") == 0) {
+        } else if (cmd == "scoreboard" || cmd == "sb") {
             handleScoreboard();
-        } else if (strcmp(command, "quit") == 0) {
+        } else if (cmd == "quit") {
             handleQuit(currentPlayerID);
             gameStarted = false; // Reset gameStarted flag after quitting
-        } else if (strcmp(command, "debug") == 0) {
+        } else if (cmd == "debug") {
             int plid, max_playtime;
-            scanf("%d %d", &plid, &max_playtime);
+            iss >> plid >> max_playtime;
             if (gameStarted && plid != currentPlayerID) {
                 std::cerr << "A game has already been started with a different player ID." << std::endl;
                 continue;
@@ -513,15 +513,15 @@ void cmdParser() {
 
             std::vector<std::string> key;
             for (int i = 0; i < 4; i++) {
-                char color[BUFFER_SIZE];
-                scanf("%s", color);
+                std::string color;
+                iss >> color;
                 key.push_back(color);
             }
 
             if (validateDebugCommand(plid, max_playtime, key)) {
                 handleDebug(plid, max_playtime, key);
             }
-        } else if (strcmp(command, "exit") == 0) {
+        } else if (cmd == "exit") {
             break;
         } else {
             fprintf(stderr, "Invalid command.\n");
