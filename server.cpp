@@ -142,7 +142,7 @@ int create_udp_socket(struct addrinfo **res, int portNumber) {
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
-    int status = getaddrinfo(NULL, std::to_string(portNumber).c_str(), &hints, res);
+    int status = getaddrinfo("0.0.0.0", std::to_string(portNumber).c_str(), &hints, res); 
     if (status != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
         return -1;
@@ -169,7 +169,7 @@ int create_tcp_socket(struct addrinfo **res, int portNumber) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    int status = getaddrinfo(NULL, std::to_string(portNumber).c_str(), &hints, res);
+    int status = getaddrinfo("0.0.0.0", std::to_string(portNumber).c_str(), &hints, res); 
     if (status != 0) {
         std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
         return -1;
