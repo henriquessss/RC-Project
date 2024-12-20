@@ -19,7 +19,7 @@ all: $(SERVER_BIN) $(PLAYER_BIN)
 
 # Regras para gerar os executáveis
 $(SERVER_BIN): $(SERVER_OBJ)
-	$(CC) -o $(SERVER_BIN) $(SERVER_OBJ)
+	$(CC) -o $(SERVER_BIN) $(SERVER_OBJ) -lpthread
 
 $(PLAYER_BIN): $(PLAYER_OBJ)
 	$(CC) -o $(PLAYER_BIN) $(PLAYER_OBJ)
