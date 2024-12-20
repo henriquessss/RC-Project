@@ -1,16 +1,14 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <iostream>
-#include <vector>
 #include <string>
-#include <unordered_map>
+#include <vector>
+#include <utility>
 
 namespace Game {
 
     #define MAX_SCORES 10
 
-    // Struct SCORELIST
     struct SCORELIST {
         int score[MAX_SCORES];
         std::string PLID[MAX_SCORES];
@@ -23,7 +21,7 @@ namespace Game {
     /**
      * @brief Generates a random key for the game.
      * 
-     * @return std::vector<std::string> The generated key.
+     * @return A vector of strings representing the key.
      */
     std::vector<std::string> generateKey();
 
@@ -31,82 +29,106 @@ namespace Game {
      * @brief Starts a new game for the player.
      * 
      * @param player_id The ID of the player.
-     * @param max_playtime The maximum playtime allowed for the game.
-     * @return int 0 if the game is successfully started, 1 if the game already exists.
+     * @param max_playtime The maximum playtime for the game.
+     * @return A vector of strings representing the key.
      */
     std::vector<std::string> startGame(const int player_id, const int max_playtime);
 
     /**
-     * @brief 
+     * @brief Quits the current game for the player.
      * 
-     */
-    int finalizeGame(std::string game_status, std::string player_id,
-                    std::string gameFile, int elapsedTime, int maxTime, std::string mode,
-                    std::string secretKey, int trials);
-
-    /**
-     * @brief Processes a play attempt with number of tries.
-     * 
-     * @param plid The player ID.
-     * @param nT The number of tries.
-     * @param guess The guess made by the player.
-     * @return std::string The status of the game after the attempt.
-     */
-    std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess);
-
-    /**
-     * @brief 
-     * 
-     */
-    int FindLastGame(std::string PLID, char* fname);
-
-    /**
-     * @brief 
-     * 
-     */
-    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime);
-
-    /**
-     * @brief Returns a vector of strings with every try in the game file.
-     * 
-     * @return std::vector<std::string> A vector containing all the tries.
-     */
-    std::string showTrials(int player_id);
-
-    /**
-     * @brief Returns a integer of the number of scores found for that player
-     * 
-     * @return int 
-     */
-    int FindTopScores(SCORELIST* list);
-
-    /**
-     * @brief Quits the current game.
-     * 
-     * @return int 0 if the game is successfully quit, 1 if there is no game to quit.
+     * @param player_id The ID of the player.
+     * @return A vector of strings representing the key.
      */
     std::vector<std::string> quitGame(int player_id);
 
     /**
-     * @brief Starts a debug game with a predefined key.
+     * @brief Starts a debug game for the player.
      * 
      * @param player_id The ID of the player.
-     * @param max_playtime The maximum playtime allowed for the game.
-     * @param key The predefined key for the debug game.
-     * @return int 0 if the game is successfully started, 1 if the game already exists.
+     * @param max_playtime The maximum playtime for the game.
+     * @param key The secret key for the game.
+     * @return 0 if the game was started successfully, 1 otherwise.
      */
     int debugGame(const int player_id, const int max_playtime, const std::vector<std::string> key);
 
     /**
-     * @brief Validates a guess against the key.
+     * @brief Validates the player's guess against the key.
      * 
-     * @param key The key to validate against.
-     * @param guess The guess to validate.
-     * @return std::pair<int, int> The number of correct positions and correct colors.
+     * @param key The secret key.
+     * @param guess The player's guess.
+     * @return A pair of integers representing the number of correct positions and correct colors.
      */
     std::pair<int, int> validateGuess(const std::vector<std::string>& key, const std::vector<std::string>& guess);
 
+    /**
+     * @brief Finalizes the game and saves the results.
+     * 
+     * @param game_status The status of the game (e.g., WIN, FAIL).
+     * @param player_id The ID of the player.
+     * @param gameFile The game file.
+     * @param elapsedTime The elapsed time of the game.
+     * @param maxTime The maximum time allowed for the game.
+     * @param mode The mode of the game (e.g., PLAY, DEBUG).
+     * @param secretKey The secret key of the game.
+     * @param trials The number of trials made by the player.
+     * @return 1 if the game was finalized successfully.
+     */
+    int finalizeGame(std::string game_status, std::string player_id, std::string gameFile, int elapsedTime, int maxTime, std::string mode, std::string secretKey, int trials);
 
+    /**
+     * @brief Processes a player's attempt to guess the key.
+     * 
+     * @param plid The ID of the player.
+     * @param nT The number of tries the player has made.
+     * @param guess The player's guess.
+     * @return A response string indicating the result of the attempt.
+     */
+    std::string playAttempt(int plid, int nT, const std::vector<std::string>& guess);
+
+    /**
+     * @brief Finds the last game file for the player.
+     * 
+     * @param PLID The ID of the player.
+     * @param fname The name of the game file.
+     * @return 1 if the game file was found, 0 otherwise.
+     */
+    int FindLastGame(std::string PLID, char* fname);
+
+    /**
+     * @brief Creates a summary file for the player's game.
+     * 
+     * @param player_id The ID of the player.
+     * @param guesses The player's guesses.
+     * @param remainingTime The remaining time for the game.
+     * @return The name of the summary file.
+     */
+    std::string createSummaryFile(int player_id, std::vector<std::string>& guesses, int remainingTime);
+
+    /**
+     * @brief Reads the game file for summary creation.
+     * 
+     * @param fname The name of the game file.
+     * @param guesses The player's guesses.
+     * @return The remaining time for the game.
+     */
+    int readForSummary(const std::string& fname, std::vector<std::string>& guesses);
+
+    /**
+     * @brief Shows the trials made by the player.
+     * 
+     * @param player_id The ID of the player.
+     * @return A response string indicating the result of the command.
+     */
+    std::string showTrials(int player_id);
+
+    /**
+     * @brief Finds the top scores.
+     * 
+     * @param list The list of top scores.
+     * @return The number of top scores found.
+     */
+    int FindTopScores(SCORELIST* list);
 }
 
-#endif 
+#endif // GAME_H
