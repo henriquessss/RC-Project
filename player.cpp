@@ -316,11 +316,11 @@ void handleTry(int plid, const std::vector<std::string>& guess) {
                 printf("No ongoing game.\n");
             } else if (strcmp(status.c_str(), "ENT") == 0) {
                 std::string key;
-                iss >> key;
+                std::getline(iss, key);
                 printf("No more attempts. The secret key was: %s\n", key.c_str());
             } else if (strcmp(status.c_str(), "ETM") == 0) {
                 std::string key;
-                iss >> key;
+                std::getline(iss, key);
                 printf("Time exceeded. The secret key was: %s\n", key.c_str());
             } else if (strcmp(status.c_str(), "ERR") == 0) {
                 trial_number--;
