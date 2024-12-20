@@ -307,7 +307,13 @@ namespace Game {
         } else if (nB != 4 && trials == 7) {
             gameStatus = "FAIL";
             finalizeGame(gameStatus, player_id, gameFile, elapsedTime, 0, "", "", 0);
-            return "ENT " + secretKey;
+            std::string spacedKey;
+            for (char c : secretKey) {
+                spacedKey += c;
+                spacedKey += ' ';
+            }
+            spacedKey.pop_back(); // Remove the trailing space
+            return "ENT " + spacedKey;
         }
 
         return "OK " + std::to_string(nT) + " " + std::to_string(nB) + " " + std::to_string(nW);
